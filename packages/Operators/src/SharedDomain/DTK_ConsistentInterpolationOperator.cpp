@@ -222,7 +222,9 @@ void ConsistentInterpolationOperator::setupImpl(
     }
 
     // Allocate the coupling matrix.
-    d_coupling_matrix = Tpetra::createCrsMatrix<double, LO, GO>( range_map );
+    //d_coupling_matrix = Tpetra::createCrsMatrix<double, LO, GO>( range_map );
+    //IKT hack! 
+    d_coupling_matrix = Tpetra::createCrsMatrix<double, LO, GO>( range_map, 100 );
 
     // Construct the entries of the coupling matrix.
     Teuchos::Array<EntityId> range_entity_ids;

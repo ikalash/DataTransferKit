@@ -14,7 +14,7 @@ TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 TRIBITS_ADD_ETI_INSTANTIATIONS(TpetraCore
-  "S={double} LO={int} GO={unsigned long} N={Kokkos::Compat::KokkosSerialWrapperNode}"
+  "S={double} LO={int} GO={long long} N={Kokkos::Compat::KokkosSerialWrapperNode}"
   )
 
 

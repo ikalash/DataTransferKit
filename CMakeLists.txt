@@ -60,10 +60,6 @@ TRIBITS_PACKAGE_DEF()
 TRIBITS_PACKAGE_POSTPROCESS()
 
 
-##---------------------------------------------------------------------------##
-## Set GlobalOrdinal type in DTK based on Tpetra 
-##---------------------------------------------------------------------------##
-
 SET(VALID_TPETRA_TYPE FALSE)
 IF (Tpetra_INST_INT_LONG_LONG)
   TRIBITS_ADD_ETI_INSTANTIATIONS(TpetraCore
@@ -71,42 +67,6 @@ IF (Tpetra_INST_INT_LONG_LONG)
   )
   SET(VALID_TPETRA_TYPE TRUE)
   message("-- Setting GO=long long in DTK")
-ENDIF()
-#IKT: the following is to allow other GO types besides long long.
-#Note that to enable these, changes in packages/Interface/src/Client/DTK_Types.hpp
-#are also required. 
-#IF (Tpetra_INST_INT_LONG)
-#  TRIBITS_ADD_ETI_INSTANTIATIONS(TpetraCore
-#  "S={double} LO={int} GO={long} N={Kokkos::Compat::KokkosSerialWrapperNode}"
-#  )
-#  SET(VALID_TPETRA_TYPE TRUE)
-#  message("-- Setting GO=long in DTK")
-#ENDIF()
-#IF (Tpetra_INST_INT_INT)
-#  TRIBITS_ADD_ETI_INSTANTIATIONS(TpetraCore
-#  "S={double} LO={int} GO={int} N={Kokkos::Compat::KokkosSerialWrapperNode}"
-#  )
-#  SET(VALID_TPETRA_TYPE TRUE)
-#  message("-- Setting GO=int in DTK")
-#ENDIF()
-#IF (Tpetra_INST_INT_UNSIGNED) 
-#  TRIBITS_ADD_ETI_INSTANTIATIONS(TpetraCore
-#  "S={double} LO={int} GO={unsigned int} N={Kokkos::Compat::KokkosSerialWrapperNode}"
-#  )
-#  SET(VALID_TPETRA_TYPE TRUE)
-#  message("-- Setting GO=unsigned int in DTK")
-#ENDIF()
-#IF(Tpetra_INST_INT_UNSIGNED_LONG) 
-#  TRIBITS_ADD_ETI_INSTANTIATIONS(TpetraCore
-#  "S={double} LO={int} GO={unsigned long} N={Kokkos::Compat::KokkosSerialWrapperNode}"
-#  )
-#  SET(VALID_TPETRA_TYPE TRUE)
-#  message("-- Setting GO=unsigned long in DTK")
-#ENDIF()
-
-IF (NOT VALID_TPETRA_TYPE)
-   message(FATAL_ERROR "DTK: invalid Global Ordinal type!  \n" 
-           "Please recompile with -DTpetra_INST_INT_LONG_LONG:BOOL=ON\n")  
 ENDIF()
 
 

@@ -45,6 +45,8 @@ Teuchos::RCP<const Teuchos::Comm<Ordinal>> getDefaultComm()
 #endif
 }
 
+using GlobalOrdinal = long long int;
+
 //---------------------------------------------------------------------------//
 // Mesh Implementation
 //---------------------------------------------------------------------------//
@@ -52,7 +54,7 @@ Teuchos::RCP<const Teuchos::Comm<Ordinal>> getDefaultComm()
 class MyMesh
 {
   public:
-    typedef unsigned long int global_ordinal_type;
+    typedef GlobalOrdinal global_ordinal_type;
 
     MyMesh() { /* ... */}
 
@@ -351,7 +353,7 @@ Teuchos::RCP<MyMesh> buildMyMesh( int my_rank, int my_size, int edge_length )
     // Make some vertices.
     int num_vertices = edge_length * edge_length * 2;
     int vertex_dim = 3;
-    Teuchos::Array<unsigned long int> vertex_handles( num_vertices );
+    Teuchos::Array<GlobalOrdinal> vertex_handles( num_vertices );
     Teuchos::Array<double> coords( vertex_dim * num_vertices );
     int idx;
     for ( int j = 0; j < edge_length; ++j )
@@ -379,8 +381,8 @@ Teuchos::RCP<MyMesh> buildMyMesh( int my_rank, int my_size, int edge_length )
 
     // Make the hexahedrons.
     int num_elements = ( edge_length - 1 ) * ( edge_length - 1 );
-    Teuchos::Array<unsigned long int> hex_handles( num_elements );
-    Teuchos::Array<unsigned long int> hex_connectivity( 8 * num_elements );
+    Teuchos::Array<GlobalOrdinal> hex_handles( num_elements );
+    Teuchos::Array<GlobalOrdinal> hex_connectivity( 8 * num_elements );
     int elem_idx, vertex_idx;
     for ( int j = 0; j < ( edge_length - 1 ); ++j )
     {
@@ -434,7 +436,7 @@ Teuchos::RCP<MyMesh> buildTiledMesh( int my_rank, int my_size, int edge_length )
     // Make some vertices.
     int num_vertices = edge_length * edge_length * 2;
     int vertex_dim = 3;
-    Teuchos::Array<unsigned long int> vertex_handles( num_vertices );
+    Teuchos::Array<GlobalOrdinal> vertex_handles( num_vertices );
     Teuchos::Array<double> coords( vertex_dim * num_vertices );
     int idx;
     for ( int j = 0; j < edge_length; ++j )
@@ -443,7 +445,7 @@ Teuchos::RCP<MyMesh> buildTiledMesh( int my_rank, int my_size, int edge_length )
         {
             idx = i + j * edge_length;
             vertex_handles[idx] =
-                (unsigned long int)num_vertices * my_rank + idx;
+                (GlobalOrdinal)num_vertices * my_rank + idx;
             coords[idx] = i + my_rank * ( edge_length - 1 );
             coords[num_vertices + idx] = j + my_rank * ( edge_length - 1 );
             coords[2 * num_vertices + idx] = 0.0;
@@ -455,7 +457,7 @@ Teuchos::RCP<MyMesh> buildTiledMesh( int my_rank, int my_size, int edge_length )
         {
             idx = i + j * edge_length + num_vertices / 2;
             vertex_handles[idx] =
-                (unsigned long int)num_vertices * my_rank + idx;
+                (GlobalOrdinal)num_vertices * my_rank + idx;
             coords[idx] = i + my_rank * ( edge_length - 1 );
             coords[num_vertices + idx] = j + my_rank * ( edge_length - 1 );
             coords[2 * num_vertices + idx] = 1.0;
@@ -464,8 +466,8 @@ Teuchos::RCP<MyMesh> buildTiledMesh( int my_rank, int my_size, int edge_length )
 
     // Make the hexahedrons.
     int num_elements = ( edge_length - 1 ) * ( edge_length - 1 );
-    Teuchos::Array<unsigned long int> hex_handles( num_elements );
-    Teuchos::Array<unsigned long int> hex_connectivity( 8 * num_elements );
+    Teuchos::Array<GlobalOrdinal> hex_handles( num_elements );
+    Teuchos::Array<GlobalOrdinal> hex_connectivity( 8 * num_elements );
     int elem_idx, vertex_idx;
     for ( int j = 0; j < ( edge_length - 1 ); ++j )
     {
@@ -682,7 +684,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_expanded_test2 )
     // its source rank + 1 as data if it is in the mesh and 0.0 if it is
     // outside.
     double source_rank;
-    Teuchos::Array<unsigned long int> missing_points;
+    Teuchos::Array<GlobalOrdinal> missing_points;
     for ( int n = 0; n < num_points; ++n )
     {
         if ( *( coordinate_field->begin() + n ) < 0.0 ||
@@ -721,7 +723,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_expanded_test2 )
 
     // Check the missing points.
     TEST_ASSERT( missing_points.size() > 0 );
-    Teuchos::ArrayView<unsigned long int> missed_in_map =
+    Teuchos::ArrayView<GlobalOrdinal> missed_in_map =
         shared_domain_map.getMissedTargetPoints();
     TEST_EQUALITY( missing_points.size(), missed_in_map.size() );
 
@@ -786,7 +788,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_tiled_test2 )
     // its source rank + 1 as data if it is in the mesh and 0.0 if it is
     // outside.
     double source_rank;
-    Teuchos::Array<unsigned long int> missing_points;
+    Teuchos::Array<GlobalOrdinal> missing_points;
     bool tagged;
     for ( int n = 0; n < num_points; ++n )
     {
@@ -864,7 +866,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_tiled_test2 )
 
     // Check the missing points.
     TEST_ASSERT( missing_points.size() > 0 );
-    Teuchos::ArrayView<unsigned long int> missed_in_map =
+    Teuchos::ArrayView<GlobalOrdinal> missed_in_map =
         shared_domain_map.getMissedTargetPoints();
     TEST_EQUALITY( missing_points.size(), missed_in_map.size() );
 
@@ -945,7 +947,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_two_maps_test2 )
     // assigned its source rank + 1 as data if it is in the mesh and 0.0 if it
     // is outside.
     double source_rank;
-    Teuchos::Array<unsigned long int> missing_points_1;
+    Teuchos::Array<GlobalOrdinal> missing_points_1;
     for ( int n = 0; n < num_points; ++n )
     {
         if ( *( coordinate_field_1->begin() + n ) < 0.0 ||
@@ -986,7 +988,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_two_maps_test2 )
 
     // Check the missing points.
     TEST_ASSERT( missing_points_1.size() > 0 );
-    Teuchos::ArrayView<unsigned long int> missed_in_map_1 =
+    Teuchos::ArrayView<GlobalOrdinal> missed_in_map_1 =
         shared_domain_map_1.getMissedTargetPoints();
     TEST_EQUALITY( missing_points_1.size(), missed_in_map_1.size() );
 
@@ -1007,7 +1009,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_two_maps_test2 )
     // Check the second data transfer. Each target point should have been
     // assigned its source rank + 1 as data if it is in the mesh and 0.0 if it
     // is outside.
-    Teuchos::Array<unsigned long int> missing_points_2;
+    Teuchos::Array<GlobalOrdinal> missing_points_2;
     for ( int n = 0; n < num_points; ++n )
     {
         if ( *( coordinate_field_2->begin() + n ) < 0.0 ||
@@ -1048,7 +1050,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_two_maps_test2 )
 
     // Check the missing points 2.
     TEST_ASSERT( missing_points_2.size() > 0 );
-    Teuchos::ArrayView<unsigned long int> missed_in_map_2 =
+    Teuchos::ArrayView<GlobalOrdinal> missed_in_map_2 =
         shared_domain_map_2.getMissedTargetPoints();
     TEST_EQUALITY( missing_points_2.size(), missed_in_map_2.size() );
 
@@ -1130,7 +1132,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_two_targets_test2 )
     // assigned its source rank + 1 as data if it is in the mesh and 0.0 if it
     // is outside.
     double source_rank;
-    Teuchos::Array<unsigned long int> missing_points_1;
+    Teuchos::Array<GlobalOrdinal> missing_points_1;
     for ( int n = 0; n < num_points; ++n )
     {
         if ( *( coordinate_field_1->begin() + n ) < 0.0 ||
@@ -1171,7 +1173,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_two_targets_test2 )
 
     // Check the missing points.
     TEST_ASSERT( missing_points_1.size() > 0 );
-    Teuchos::ArrayView<unsigned long int> missed_in_map_1 =
+    Teuchos::ArrayView<GlobalOrdinal> missed_in_map_1 =
         shared_domain_map.getMissedTargetPoints();
     TEST_EQUALITY( missing_points_1.size(), missed_in_map_1.size() );
 
@@ -1189,7 +1191,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_two_targets_test2 )
     // Check the second data transfer. Each target point should have been
     // assigned its source rank + 1 as data if it is in the mesh and 0.0 if it
     // is outside.
-    Teuchos::Array<unsigned long int> missing_points_2;
+    Teuchos::Array<GlobalOrdinal> missing_points_2;
     for ( int n = 0; n < num_points; ++n )
     {
         if ( *( coordinate_field_2->begin() + n ) < 0.0 ||
@@ -1230,7 +1232,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_two_targets_test2 )
 
     // Check the missing points 2.
     TEST_ASSERT( missing_points_2.size() > 0 );
-    Teuchos::ArrayView<unsigned long int> missed_in_map_2 =
+    Teuchos::ArrayView<GlobalOrdinal> missed_in_map_2 =
         shared_domain_map.getMissedTargetPoints();
     TEST_EQUALITY( missing_points_2.size(), missed_in_map_2.size() );
 

@@ -15,6 +15,7 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
     DataTransferKitC_API
     STKIO
     STKUnit_tests
+    STKUnit_test_utils
   LIB_REQUIRED_TPLS
     MPI
   )

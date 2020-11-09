@@ -90,7 +90,7 @@ TEUCHOS_UNIT_TEST( STKMeshEntityIntegrationRule, hex_8_test )
             .declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
                 stk::topology::NODE_RANK, "test field" );
     meta_data.set_coordinate_field( &data_field );
-    stk::mesh::put_field( data_field, part_1 );
+    stk::mesh::put_field_on_mesh( data_field, part_1, static_cast<double*>( nullptr ) );
     meta_data.commit();
 
     // Create bulk data.

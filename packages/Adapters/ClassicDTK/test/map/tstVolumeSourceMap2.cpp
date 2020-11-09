@@ -136,13 +136,15 @@ class FieldTraits<MyField>
 
 } // end namespace DataTransferKit
 
+using GlobalOrdinal = long long int;
+
 //---------------------------------------------------------------------------//
 // FieldEvaluator Implementation.
 class MyEvaluator
-    : public DataTransferKit::FieldEvaluator<unsigned long int, MyField>
+    : public DataTransferKit::FieldEvaluator<GlobalOrdinal, MyField>
 {
   public:
-    MyEvaluator( const Teuchos::ArrayRCP<unsigned long int> &geom_gids,
+    MyEvaluator( const Teuchos::ArrayRCP<GlobalOrdinal> &geom_gids,
                  const Teuchos::RCP<const Teuchos::Comm<int>> &comm )
         : d_geom_gids( geom_gids )
         , d_comm( comm )
@@ -151,7 +153,7 @@ class MyEvaluator
 
     ~MyEvaluator() { /* ... */}
 
-    MyField evaluate( const Teuchos::ArrayRCP<unsigned long int> &gids,
+    MyField evaluate( const Teuchos::ArrayRCP<GlobalOrdinal> &gids,
                       const Teuchos::ArrayRCP<double> &coords )
     {
         MyField evaluated_data( gids.size(), 1 );
@@ -171,7 +173,7 @@ class MyEvaluator
     }
 
   private:
-    Teuchos::ArrayRCP<unsigned long int> d_geom_gids;
+    Teuchos::ArrayRCP<GlobalOrdinal> d_geom_gids;
     Teuchos::RCP<const Teuchos::Comm<int>> d_comm;
 };
 
@@ -182,10 +184,10 @@ class MyEvaluator
 void buildCylinderGeometry(
     int my_size, int edge_size,
     Teuchos::ArrayRCP<DataTransferKit::Cylinder> &cylinders,
-    Teuchos::ArrayRCP<unsigned long int> &gids )
+    Teuchos::ArrayRCP<GlobalOrdinal> &gids )
 {
     Teuchos::ArrayRCP<DataTransferKit::Cylinder> new_cylinders( 1 );
-    Teuchos::ArrayRCP<unsigned long int> new_gids( 1, 0 );
+    Teuchos::ArrayRCP<GlobalOrdinal> new_gids( 1, 0 );
     double length = (double)my_size;
     double radius = (double)( edge_size - 1 ) / 2.0;
     double x_center = (double)( edge_size - 1 ) / 2.0;
@@ -200,10 +202,10 @@ void buildCylinderGeometry(
 //---------------------------------------------------------------------------//
 void buildBoxGeometry( int my_size, int edge_size,
                        Teuchos::ArrayRCP<DataTransferKit::Box> &boxes,
-                       Teuchos::ArrayRCP<unsigned long int> &gids )
+                       Teuchos::ArrayRCP<GlobalOrdinal> &gids )
 {
     Teuchos::ArrayRCP<DataTransferKit::Box> new_boxes( 1 );
-    Teuchos::ArrayRCP<unsigned long int> new_gids( 1, 0 );
+    Teuchos::ArrayRCP<GlobalOrdinal> new_gids( 1, 0 );
     new_boxes[0] = DataTransferKit::Box( 0.0, 0.0, 0.0, edge_size - 1,
                                          edge_size - 1, my_size );
     boxes = new_boxes;
@@ -249,9 +251,9 @@ TEUCHOS_UNIT_TEST( VolumeSourceMap, cylinder_test )
     double edge_size = 1.0;
     int geom_dim = 3;
     Teuchos::ArrayRCP<Cylinder> geometry( 0 );
-    Teuchos::ArrayRCP<unsigned long int> geom_gids( 0 );
-    Teuchos::RCP<FieldEvaluator<unsigned long int, MyField>> source_evaluator;
-    Teuchos::RCP<GeometryManager<Cylinder, unsigned long int>>
+    Teuchos::ArrayRCP<GlobalOrdinal> geom_gids( 0 );
+    Teuchos::RCP<FieldEvaluator<GlobalOrdinal, MyField>> source_evaluator;
+    Teuchos::RCP<GeometryManager<Cylinder, GlobalOrdinal>>
         source_geometry_manager;
     if ( my_rank == 0 )
     {
@@ -259,7 +261,7 @@ TEUCHOS_UNIT_TEST( VolumeSourceMap, cylinder_test )
         source_evaluator =
             Teuchos::rcp( new MyEvaluator( geom_gids, geom_comm ) );
         source_geometry_manager =
-            Teuchos::rcp( new GeometryManager<Cylinder, unsigned long int>(
+            Teuchos::rcp( new GeometryManager<Cylinder, GlobalOrdinal>(
                 geometry, geom_gids, geom_comm, geom_dim ) );
     }
     comm->barrier();
@@ -282,7 +284,7 @@ TEUCHOS_UNIT_TEST( VolumeSourceMap, cylinder_test )
         Teuchos::rcp( new FieldManager<MyField>( target_field, comm ) );
 
     // Setup and apply the volume source mapping.
-    VolumeSourceMap<Cylinder, unsigned long int, MyField> volume_source_map(
+    VolumeSourceMap<Cylinder, GlobalOrdinal, MyField> volume_source_map(
         comm, geom_dim, true, 1.0e-6 );
     volume_source_map.setup( source_geometry_manager, target_coord_manager );
     volume_source_map.apply( source_evaluator, target_space_manager );
@@ -354,9 +356,9 @@ TEUCHOS_UNIT_TEST( VolumeSourceMap, box_test )
     double edge_size = 1.0;
     int geom_dim = 3;
     Teuchos::ArrayRCP<Box> geometry( 0 );
-    Teuchos::ArrayRCP<unsigned long int> geom_gids( 0 );
-    Teuchos::RCP<FieldEvaluator<unsigned long int, MyField>> source_evaluator;
-    Teuchos::RCP<GeometryManager<Box, unsigned long int>>
+    Teuchos::ArrayRCP<GlobalOrdinal> geom_gids( 0 );
+    Teuchos::RCP<FieldEvaluator<GlobalOrdinal, MyField>> source_evaluator;
+    Teuchos::RCP<GeometryManager<Box, GlobalOrdinal>>
         source_geometry_manager;
     if ( my_rank == 0 )
     {
@@ -364,7 +366,7 @@ TEUCHOS_UNIT_TEST( VolumeSourceMap, box_test )
         source_evaluator =
             Teuchos::rcp( new MyEvaluator( geom_gids, geom_comm ) );
         source_geometry_manager =
-            Teuchos::rcp( new GeometryManager<Box, unsigned long int>(
+            Teuchos::rcp( new GeometryManager<Box, GlobalOrdinal>(
                 geometry, geom_gids, geom_comm, geom_dim ) );
     }
     comm->barrier();
@@ -387,7 +389,7 @@ TEUCHOS_UNIT_TEST( VolumeSourceMap, box_test )
         Teuchos::rcp( new FieldManager<MyField>( target_field, comm ) );
 
     // Setup and apply the volume source mapping.
-    VolumeSourceMap<Box, unsigned long int, MyField> volume_source_map(
+    VolumeSourceMap<Box, GlobalOrdinal, MyField> volume_source_map(
         comm, geom_dim, true, 1.0e-6 );
     volume_source_map.setup( source_geometry_manager, target_coord_manager );
     volume_source_map.apply( source_evaluator, target_space_manager );

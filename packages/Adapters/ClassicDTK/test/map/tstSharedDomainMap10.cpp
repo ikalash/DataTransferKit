@@ -133,10 +133,10 @@ class FieldTraits<MyField>
 //---------------------------------------------------------------------------//
 // FieldEvaluator Implementation.
 class MyEvaluator
-    : public DataTransferKit::FieldEvaluator<unsigned long int, MyField>
+    : public DataTransferKit::FieldEvaluator<GlobalOrdinal, MyField>
 {
   public:
-    MyEvaluator( const DataTransferKit::MeshContainer<unsigned long int> &mesh,
+    MyEvaluator( const DataTransferKit::MeshContainer<GlobalOrdinal> &mesh,
                  const Teuchos::RCP<const Teuchos::Comm<int>> &comm )
         : d_mesh( mesh )
         , d_comm( comm )
@@ -146,7 +146,7 @@ class MyEvaluator
     ~MyEvaluator() { /* ... */}
 
     MyField evaluate( const Teuchos::ArrayRCP<DataTransferKit::MeshContainer<
-                          unsigned long int>::global_ordinal_type> &elements,
+                          GlobalOrdinal>::global_ordinal_type> &elements,
                       const Teuchos::ArrayRCP<double> &coords )
     {
         MyField evaluated_data( elements.size(), 1 );
@@ -166,20 +166,20 @@ class MyEvaluator
     }
 
   private:
-    DataTransferKit::MeshContainer<unsigned long int> d_mesh;
+    DataTransferKit::MeshContainer<GlobalOrdinal> d_mesh;
     Teuchos::RCP<const Teuchos::Comm<int>> d_comm;
 };
 
 //---------------------------------------------------------------------------//
 // Mesh create functions.
 //---------------------------------------------------------------------------//
-Teuchos::RCP<DataTransferKit::MeshContainer<unsigned long int>>
+Teuchos::RCP<DataTransferKit::MeshContainer<GlobalOrdinal>>
 buildTriMesh( int my_rank, int my_size, int edge_length, int elem_offset )
 {
     // Make some vertices.
     int num_vertices = edge_length * edge_length;
     int vertex_dim = 2;
-    Teuchos::ArrayRCP<unsigned long int> vertex_handles( num_vertices );
+    Teuchos::ArrayRCP<GlobalOrdinal> vertex_handles( num_vertices );
     Teuchos::ArrayRCP<double> coords( vertex_dim * num_vertices );
     int idx;
     for ( int j = 0; j < edge_length; ++j )
@@ -188,7 +188,7 @@ buildTriMesh( int my_rank, int my_size, int edge_length, int elem_offset )
         {
             idx = i + j * edge_length;
             vertex_handles[idx] =
-                (unsigned long int)num_vertices * my_rank + idx + elem_offset;
+                (GlobalOrdinal)num_vertices * my_rank + idx + elem_offset;
             coords[idx] = i + my_rank * ( edge_length - 1 );
             coords[num_vertices + idx] = j;
         }
@@ -196,9 +196,9 @@ buildTriMesh( int my_rank, int my_size, int edge_length, int elem_offset )
 
     // Make the triangles.
     int num_elements = ( edge_length - 1 ) * ( edge_length - 1 ) * 2;
-    Teuchos::ArrayRCP<unsigned long int> tri_handles( num_elements );
-    Teuchos::ArrayRCP<unsigned long int> tri_connectivity( 3 * num_elements );
-    unsigned long int elem_idx, vertex_idx;
+    Teuchos::ArrayRCP<GlobalOrdinal> tri_handles( num_elements );
+    Teuchos::ArrayRCP<GlobalOrdinal> tri_connectivity( 3 * num_elements );
+    GlobalOrdinal elem_idx, vertex_idx;
     int v0, v1, v2, v3;
     for ( int j = 0; j < ( edge_length - 1 ); ++j )
     {
@@ -233,19 +233,19 @@ buildTriMesh( int my_rank, int my_size, int edge_length, int elem_offset )
         permutation_list[i] = i;
     }
 
-    return Teuchos::rcp( new DataTransferKit::MeshContainer<unsigned long int>(
+    return Teuchos::rcp( new DataTransferKit::MeshContainer<GlobalOrdinal>(
         2, vertex_handles, coords, DataTransferKit::DTK_TRIANGLE, 3,
         tri_handles, tri_connectivity, permutation_list ) );
 }
 
 //---------------------------------------------------------------------------//
-Teuchos::RCP<DataTransferKit::MeshContainer<unsigned long int>>
+Teuchos::RCP<DataTransferKit::MeshContainer<GlobalOrdinal>>
 buildTiledTriMesh( int my_rank, int my_size, int edge_length, int elem_offset )
 {
     // Make some vertices.
     int num_vertices = edge_length * edge_length;
     int vertex_dim = 2;
-    Teuchos::ArrayRCP<unsigned long int> vertex_handles( num_vertices );
+    Teuchos::ArrayRCP<GlobalOrdinal> vertex_handles( num_vertices );
     Teuchos::ArrayRCP<double> coords( vertex_dim * num_vertices );
     int idx;
     for ( int j = 0; j < edge_length; ++j )
@@ -254,7 +254,7 @@ buildTiledTriMesh( int my_rank, int my_size, int edge_length, int elem_offset )
         {
             idx = i + j * edge_length;
             vertex_handles[idx] =
-                (unsigned long int)num_vertices * my_rank + idx + elem_offset;
+                (GlobalOrdinal)num_vertices * my_rank + idx + elem_offset;
             coords[idx] = i + my_rank * ( edge_length - 1 );
             coords[num_vertices + idx] = j + my_rank * ( edge_length - 1 );
         }
@@ -262,9 +262,9 @@ buildTiledTriMesh( int my_rank, int my_size, int edge_length, int elem_offset )
 
     // Make the triangles.
     int num_elements = ( edge_length - 1 ) * ( edge_length - 1 ) * 2;
-    Teuchos::ArrayRCP<unsigned long int> tri_handles( num_elements );
-    Teuchos::ArrayRCP<unsigned long int> tri_connectivity( 3 * num_elements );
-    unsigned long int elem_idx, vertex_idx;
+    Teuchos::ArrayRCP<GlobalOrdinal> tri_handles( num_elements );
+    Teuchos::ArrayRCP<GlobalOrdinal> tri_connectivity( 3 * num_elements );
+    GlobalOrdinal elem_idx, vertex_idx;
     int v0, v1, v2, v3;
     for ( int j = 0; j < ( edge_length - 1 ); ++j )
     {
@@ -299,38 +299,38 @@ buildTiledTriMesh( int my_rank, int my_size, int edge_length, int elem_offset )
         permutation_list[i] = i;
     }
 
-    return Teuchos::rcp( new DataTransferKit::MeshContainer<unsigned long int>(
+    return Teuchos::rcp( new DataTransferKit::MeshContainer<GlobalOrdinal>(
         2, vertex_handles, coords, DataTransferKit::DTK_TRIANGLE, 3,
         tri_handles, tri_connectivity, permutation_list ) );
 }
 
 //---------------------------------------------------------------------------//
-Teuchos::RCP<DataTransferKit::MeshContainer<unsigned long int>>
+Teuchos::RCP<DataTransferKit::MeshContainer<GlobalOrdinal>>
 buildNullTriMesh()
 {
-    Teuchos::ArrayRCP<unsigned long int> vertex_handles( 0 );
+    Teuchos::ArrayRCP<GlobalOrdinal> vertex_handles( 0 );
     Teuchos::ArrayRCP<double> coords( 0 );
-    Teuchos::ArrayRCP<unsigned long int> tri_handles( 0 );
-    Teuchos::ArrayRCP<unsigned long int> tri_connectivity( 0 );
+    Teuchos::ArrayRCP<GlobalOrdinal> tri_handles( 0 );
+    Teuchos::ArrayRCP<GlobalOrdinal> tri_connectivity( 0 );
     Teuchos::ArrayRCP<int> permutation_list( 3 );
     for ( int i = 0; (int)i < permutation_list.size(); ++i )
     {
         permutation_list[i] = i;
     }
 
-    return Teuchos::rcp( new DataTransferKit::MeshContainer<unsigned long int>(
+    return Teuchos::rcp( new DataTransferKit::MeshContainer<GlobalOrdinal>(
         2, vertex_handles, coords, DataTransferKit::DTK_TRIANGLE, 3,
         tri_handles, tri_connectivity, permutation_list ) );
 }
 
 //---------------------------------------------------------------------------//
-Teuchos::RCP<DataTransferKit::MeshContainer<unsigned long int>>
+Teuchos::RCP<DataTransferKit::MeshContainer<GlobalOrdinal>>
 buildQuadMesh( int my_rank, int my_size, int edge_length, int elem_offset )
 {
     // Make some vertices.
     int num_vertices = edge_length * edge_length;
     int vertex_dim = 2;
-    Teuchos::ArrayRCP<unsigned long int> vertex_handles( num_vertices );
+    Teuchos::ArrayRCP<GlobalOrdinal> vertex_handles( num_vertices );
     Teuchos::ArrayRCP<double> coords( vertex_dim * num_vertices );
     int idx;
     for ( int j = 0; j < edge_length; ++j )
@@ -339,7 +339,7 @@ buildQuadMesh( int my_rank, int my_size, int edge_length, int elem_offset )
         {
             idx = i + j * edge_length;
             vertex_handles[idx] =
-                (unsigned long int)num_vertices * my_rank + idx + elem_offset;
+                (GlobalOrdinal)num_vertices * my_rank + idx + elem_offset;
             coords[idx] = i + my_rank * ( edge_length - 1 );
             coords[num_vertices + idx] = j;
         }
@@ -347,8 +347,8 @@ buildQuadMesh( int my_rank, int my_size, int edge_length, int elem_offset )
 
     // Make the quadrilaterals.
     int num_elements = ( edge_length - 1 ) * ( edge_length - 1 );
-    Teuchos::ArrayRCP<unsigned long int> quad_handles( num_elements );
-    Teuchos::ArrayRCP<unsigned long int> quad_connectivity( 4 * num_elements );
+    Teuchos::ArrayRCP<GlobalOrdinal> quad_handles( num_elements );
+    Teuchos::ArrayRCP<GlobalOrdinal> quad_connectivity( 4 * num_elements );
     int elem_idx, vertex_idx;
     for ( int j = 0; j < ( edge_length - 1 ); ++j )
     {
@@ -378,19 +378,19 @@ buildQuadMesh( int my_rank, int my_size, int edge_length, int elem_offset )
         permutation_list[i] = i;
     }
 
-    return Teuchos::rcp( new DataTransferKit::MeshContainer<unsigned long int>(
+    return Teuchos::rcp( new DataTransferKit::MeshContainer<GlobalOrdinal>(
         2, vertex_handles, coords, DataTransferKit::DTK_QUADRILATERAL, 4,
         quad_handles, quad_connectivity, permutation_list ) );
 }
 
 //---------------------------------------------------------------------------//
-Teuchos::RCP<DataTransferKit::MeshContainer<unsigned long int>>
+Teuchos::RCP<DataTransferKit::MeshContainer<GlobalOrdinal>>
 buildTiledQuadMesh( int my_rank, int my_size, int edge_length, int elem_offset )
 {
     // Make some vertices.
     int num_vertices = edge_length * edge_length;
     int vertex_dim = 2;
-    Teuchos::ArrayRCP<unsigned long int> vertex_handles( num_vertices );
+    Teuchos::ArrayRCP<GlobalOrdinal> vertex_handles( num_vertices );
     Teuchos::ArrayRCP<double> coords( vertex_dim * num_vertices );
     int idx;
     for ( int j = 0; j < edge_length; ++j )
@@ -399,7 +399,7 @@ buildTiledQuadMesh( int my_rank, int my_size, int edge_length, int elem_offset )
         {
             idx = i + j * edge_length;
             vertex_handles[idx] =
-                (unsigned long int)num_vertices * my_rank + idx + elem_offset;
+                (GlobalOrdinal)num_vertices * my_rank + idx + elem_offset;
             coords[idx] = i + my_rank * ( edge_length - 1 );
             coords[num_vertices + idx] = j + my_rank * ( edge_length - 1 );
         }
@@ -407,8 +407,8 @@ buildTiledQuadMesh( int my_rank, int my_size, int edge_length, int elem_offset )
 
     // Make the quadrilaterals.
     int num_elements = ( edge_length - 1 ) * ( edge_length - 1 );
-    Teuchos::ArrayRCP<unsigned long int> quad_handles( num_elements );
-    Teuchos::ArrayRCP<unsigned long int> quad_connectivity( 4 * num_elements );
+    Teuchos::ArrayRCP<GlobalOrdinal> quad_handles( num_elements );
+    Teuchos::ArrayRCP<GlobalOrdinal> quad_connectivity( 4 * num_elements );
     int elem_idx, vertex_idx;
     for ( int j = 0; j < ( edge_length - 1 ); ++j )
     {
@@ -438,26 +438,26 @@ buildTiledQuadMesh( int my_rank, int my_size, int edge_length, int elem_offset )
         permutation_list[i] = i;
     }
 
-    return Teuchos::rcp( new DataTransferKit::MeshContainer<unsigned long int>(
+    return Teuchos::rcp( new DataTransferKit::MeshContainer<GlobalOrdinal>(
         2, vertex_handles, coords, DataTransferKit::DTK_QUADRILATERAL, 4,
         quad_handles, quad_connectivity, permutation_list ) );
 }
 
 //---------------------------------------------------------------------------//
-Teuchos::RCP<DataTransferKit::MeshContainer<unsigned long int>>
+Teuchos::RCP<DataTransferKit::MeshContainer<GlobalOrdinal>>
 buildNullQuadMesh()
 {
-    Teuchos::ArrayRCP<unsigned long int> vertex_handles( 0 );
+    Teuchos::ArrayRCP<GlobalOrdinal> vertex_handles( 0 );
     Teuchos::ArrayRCP<double> coords( 0 );
-    Teuchos::ArrayRCP<unsigned long int> quad_handles( 0 );
-    Teuchos::ArrayRCP<unsigned long int> quad_connectivity( 0 );
+    Teuchos::ArrayRCP<GlobalOrdinal> quad_handles( 0 );
+    Teuchos::ArrayRCP<GlobalOrdinal> quad_connectivity( 0 );
     Teuchos::ArrayRCP<int> permutation_list( 4 );
     for ( int i = 0; (int)i < permutation_list.size(); ++i )
     {
         permutation_list[i] = i;
     }
 
-    return Teuchos::rcp( new DataTransferKit::MeshContainer<unsigned long int>(
+    return Teuchos::rcp( new DataTransferKit::MeshContainer<GlobalOrdinal>(
         2, vertex_handles, coords, DataTransferKit::DTK_QUADRILATERAL, 4,
         quad_handles, quad_connectivity, permutation_list ) );
 }
@@ -523,7 +523,7 @@ int num_points = 1000;
 TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_test10 )
 {
     using namespace DataTransferKit;
-    typedef MeshContainer<unsigned long int> MeshType;
+    typedef MeshContainer<GlobalOrdinal> MeshType;
 
     // Setup communication.
     Teuchos::RCP<const Teuchos::Comm<int>> comm = getDefaultComm<int>();
@@ -581,7 +581,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_test10 )
         Teuchos::rcp( new FieldManager<MyField>( coordinate_field, comm ) );
 
     // Create field evaluator.
-    Teuchos::RCP<FieldEvaluator<unsigned long int, MyField>> source_evaluator;
+    Teuchos::RCP<FieldEvaluator<GlobalOrdinal, MyField>> source_evaluator;
     if ( my_rank == 0 )
     {
         source_evaluator =
@@ -639,7 +639,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_test10 )
 TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_expanded_test10 )
 {
     using namespace DataTransferKit;
-    typedef MeshContainer<unsigned long int> MeshType;
+    typedef MeshContainer<GlobalOrdinal> MeshType;
 
     // Setup communication.
     Teuchos::RCP<const Teuchos::Comm<int>> comm = getDefaultComm<int>();
@@ -697,7 +697,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_expanded_test10 )
         Teuchos::rcp( new FieldManager<MyField>( coordinate_field, comm ) );
 
     // Create field evaluator.
-    Teuchos::RCP<FieldEvaluator<unsigned long int, MyField>> source_evaluator;
+    Teuchos::RCP<FieldEvaluator<GlobalOrdinal, MyField>> source_evaluator;
     if ( my_rank == 0 )
     {
         source_evaluator =
@@ -737,7 +737,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_expanded_test10 )
     // its source rank + 1 as data if it is in the mesh and 0.0 if it is
     // outside.
     double source_rank;
-    Teuchos::Array<unsigned long int> missing_points;
+    Teuchos::Array<GlobalOrdinal> missing_points;
     for ( int n = 0; n < num_points; ++n )
     {
         if ( *( coordinate_field->begin() + n ) < 0.0 ||
@@ -769,7 +769,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_expanded_test10 )
 
     // Check the missing points.
     TEST_ASSERT( missing_points.size() > 0 );
-    Teuchos::ArrayView<unsigned long int> missed_in_map =
+    Teuchos::ArrayView<GlobalOrdinal> missed_in_map =
         shared_domain_map.getMissedTargetPoints();
     TEST_EQUALITY( missing_points.size(), missed_in_map.size() );
 
@@ -789,7 +789,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_expanded_test10 )
 TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_tiled_test10 )
 {
     using namespace DataTransferKit;
-    typedef MeshContainer<unsigned long int> MeshType;
+    typedef MeshContainer<GlobalOrdinal> MeshType;
 
     // Setup communication.
     Teuchos::RCP<const Teuchos::Comm<int>> comm = getDefaultComm<int>();
@@ -847,7 +847,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_tiled_test10 )
         Teuchos::rcp( new FieldManager<MyField>( coordinate_field, comm ) );
 
     // Create field evaluator.
-    Teuchos::RCP<FieldEvaluator<unsigned long int, MyField>> source_evaluator;
+    Teuchos::RCP<FieldEvaluator<GlobalOrdinal, MyField>> source_evaluator;
     if ( my_rank == 0 )
     {
         source_evaluator =
@@ -887,7 +887,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_tiled_test10 )
     // its source rank + 1 as data if it is in the mesh and 0.0 if it is
     // outside.
     double source_rank;
-    Teuchos::Array<unsigned long int> missing_points;
+    Teuchos::Array<GlobalOrdinal> missing_points;
     bool tagged;
     for ( int n = 0; n < num_points; ++n )
     {
@@ -943,7 +943,7 @@ TEUCHOS_UNIT_TEST( SharedDomainMap, shared_domain_map_tiled_test10 )
 
     // Check the missing points.
     TEST_ASSERT( missing_points.size() > 0 );
-    Teuchos::ArrayView<unsigned long int> missed_in_map =
+    Teuchos::ArrayView<GlobalOrdinal> missed_in_map =
         shared_domain_map.getMissedTargetPoints();
     TEST_EQUALITY( missing_points.size(), missed_in_map.size() );
 

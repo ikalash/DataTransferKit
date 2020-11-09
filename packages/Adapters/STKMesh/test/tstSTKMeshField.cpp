@@ -96,7 +96,7 @@ TEUCHOS_UNIT_TEST( STKMeshField, pull_push_test )
             .declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
                 stk::topology::NODE_RANK, "test field 1" );
     meta_data.set_coordinate_field( &data_field_1 );
-    stk::mesh::put_field( data_field_1, part_1 );
+    stk::mesh::put_field_on_mesh( data_field_1, part_1, static_cast<double*>( nullptr ) );
 
     // Make an empty data field.
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &data_field_2 =
@@ -104,7 +104,7 @@ TEUCHOS_UNIT_TEST( STKMeshField, pull_push_test )
             .declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
                 stk::topology::NODE_RANK, "test field 2" );
     meta_data.set_coordinate_field( &data_field_2 );
-    stk::mesh::put_field( data_field_2, part_2 );
+    stk::mesh::put_field_on_mesh( data_field_2, part_2, static_cast<double*>( nullptr ) );
 
     // Commit the meta data.
     meta_data.commit();

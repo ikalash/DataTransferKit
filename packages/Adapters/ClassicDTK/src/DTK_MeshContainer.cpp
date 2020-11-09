@@ -55,7 +55,7 @@ template class MeshContainer<long unsigned int>;
 template class MeshContainer<long int>;
 
 template class MeshContainer<long long unsigned int>;
-template class MeshContainer<long long int>;
+template class MeshContainer<GlobalOrdinal>;
 
 } // end namespace DataTransferKit
 

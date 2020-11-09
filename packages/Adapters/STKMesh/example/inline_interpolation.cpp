@@ -81,8 +81,8 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/fixtures/CoordinateMapping.hpp>
-#include <stk_mesh/fixtures/HexFixture.hpp>
+#include <stk_unit_test_utils/stk_mesh_fixtures/CoordinateMapping.hpp>
+#include <stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp>
 #include <stk_topology/topology.hpp>
 
 //---------------------------------------------------------------------------//
@@ -159,7 +159,7 @@ int main( int argc, char *argv[] )
         src_fixture.m_meta.declare_field<stk::mesh::Field<double>>(
             stk::topology::NODE_RANK, "u_src" );
     stk::mesh::Part &src_part = src_fixture.m_meta.universal_part();
-    stk::mesh::put_field( source_field, src_part );
+    stk::mesh::put_field_on_mesh( source_field, src_part, static_cast<double*>( nullptr ) );
 
     // Create the mesh on the fixture.
     Teuchos::RCP<stk::mesh::BulkData> src_bulk_data =
@@ -206,13 +206,13 @@ int main( int argc, char *argv[] )
     stk::mesh::Field<double> &target_field =
         tgt_fixture.m_meta.declare_field<stk::mesh::Field<double>>(
             stk::topology::NODE_RANK, "u_tgt" );
-    stk::mesh::put_field( target_field, tgt_part );
+    stk::mesh::put_field_on_mesh( target_field, tgt_part, static_cast<double*>( nullptr ) );
 
     // Add an error nodal field to the target part.
     stk::mesh::Field<double> &target_error_field =
         tgt_fixture.m_meta.declare_field<stk::mesh::Field<double>>(
             stk::topology::NODE_RANK, "u_err" );
-    stk::mesh::put_field( target_error_field, tgt_part );
+    stk::mesh::put_field_on_mesh( target_error_field, tgt_part, static_cast<double*>( nullptr ) );
 
     // Create the mesh on the fixture.
     Teuchos::RCP<stk::mesh::BulkData> tgt_bulk_data =

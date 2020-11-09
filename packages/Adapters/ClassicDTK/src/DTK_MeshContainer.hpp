@@ -47,6 +47,8 @@
 
 #include <Teuchos_ArrayRCP.hpp>
 
+using GlobalOrdinal = long long int;
+
 namespace DataTransferKit
 {
 //---------------------------------------------------------------------------//

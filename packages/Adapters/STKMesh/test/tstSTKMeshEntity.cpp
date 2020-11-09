@@ -114,7 +114,7 @@ TEUCHOS_UNIT_TEST( STKMeshEntity, hex_8_test )
             .declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
                 stk::topology::NODE_RANK, "coordinates" );
     meta_data.set_coordinate_field( &coord_field );
-    stk::mesh::put_field( coord_field, part_1 );
+    stk::mesh::put_field_on_mesh( coord_field, part_1, static_cast<double*>( nullptr ) );
     meta_data.commit();
 
     // Create bulk data.

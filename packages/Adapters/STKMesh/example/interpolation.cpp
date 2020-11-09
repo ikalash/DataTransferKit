@@ -168,7 +168,7 @@ int main( int argc, char *argv[] )
             stk::topology::NODE_RANK, "u_src" );
     stk::mesh::Part *src_part =
         src_broker.meta_data().get_part( source_mesh_part_name );
-    stk::mesh::put_field( source_field, *src_part );
+    stk::mesh::put_field_on_mesh( source_field, *src_part, static_cast<double*>( nullptr ) );
 
     // Create the source bulk data.
     src_broker.populate_bulk_data();
@@ -214,13 +214,13 @@ int main( int argc, char *argv[] )
             stk::topology::NODE_RANK, "u_tgt" );
     stk::mesh::Part *tgt_part =
         tgt_broker.meta_data().get_part( target_mesh_part_name );
-    stk::mesh::put_field( target_field, *tgt_part );
+    stk::mesh::put_field_on_mesh( target_field, *tgt_part, static_cast<double*>( nullptr ) );
 
     // Add an error nodal field to the target part.
     stk::mesh::Field<double> &target_error_field =
         tgt_broker.meta_data().declare_field<stk::mesh::Field<double>>(
             stk::topology::NODE_RANK, "u_err" );
-    stk::mesh::put_field( target_error_field, *tgt_part );
+    stk::mesh::put_field_on_mesh( target_error_field, *tgt_part, static_cast<double*>( nullptr ) );
 
     // Create the target bulk data.
     tgt_broker.populate_bulk_data();

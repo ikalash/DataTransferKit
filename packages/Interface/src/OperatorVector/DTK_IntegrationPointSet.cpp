@@ -181,7 +181,7 @@ void IntegrationPointSet::addPoint( const IntegrationPoint &ip )
 void IntegrationPointSet::finalize()
 {
     // Build a globally contiguous ordering of point global ids.
-    EntityId num_local_ip = d_points.size();
+    unsigned int num_local_ip = d_points.size();
 
     EntityId invalid = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
     Teuchos::RCP<const Tpetra::Map<int, EntityId>> map =

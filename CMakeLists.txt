@@ -105,23 +105,45 @@ ENDIF()
 ## Check that there are no trailing whitespaces or tabs
 ##---------------------------------------------------------------------------##
 
-FILE(WRITE
-    ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/check_no_trailing_whitespaces_or_tabs.sh
-    "#!/usr/bin/env bash\n"
-    "\n"
-    "grep "
-    "--exclude={*.doc,*.eps,*.gif,*.jpg,*.pdf,*.png} "
-    "--exclude={.project,.cproject} "
-    "--exclude={*Makefile*,*makefile*} "
-    "--exclude=.gitmodules "
-    "--exclude-dir={.git,data} "
-    "--regexp '[[:blank:]]$' "
-    "--regexp $'\\t' "
-    "--line-number "
-    "`git ls-files`"
-    "\n"
-    "test \$? -eq 1"
-)
+## The "grep" on Mac doesn't work properly with the --exclude-dir option
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+   FILE(WRITE
+       ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/check_no_trailing_whitespaces_or_tabs.sh
+       "#!/usr/bin/env bash\n"
+       "\n"
+       "grep "
+       "--exclude={*.doc,*.eps,*.gif,*.jpg,*.pdf,*.png} "
+       "--exclude={.project,.cproject} "
+       "--exclude={*Makefile*,*makefile*} "
+       "--exclude=.gitmodules "
+       "--exclude={.git,data} "
+       "--regexp '[[:blank:]]$' "
+       "--regexp $'\\t' "
+       "--line-number "
+       "`git ls-files`"
+       "\n"
+       "test \$? -eq 1"
+   )
+ELSE()
+   FILE(WRITE
+       ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/check_no_trailing_whitespaces_or_tabs.sh
+       "#!/usr/bin/env bash\n"
+       "\n"
+       "grep "
+       "--exclude={*.doc,*.eps,*.gif,*.jpg,*.pdf,*.png} "
+       "--exclude={.project,.cproject} "
+       "--exclude={*Makefile*,*makefile*} "
+       "--exclude=.gitmodules "
+       "--exclude-dir={.git,data} "
+       "--regexp '[[:blank:]]$' "
+       "--regexp $'\\t' "
+       "--line-number "
+       "`git ls-files`"
+       "\n"
+       "test \$? -eq 1"
+   )
+ENDIF()
+
 FILE(COPY
     ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/check_no_trailing_whitespaces_or_tabs.sh
     DESTINATION

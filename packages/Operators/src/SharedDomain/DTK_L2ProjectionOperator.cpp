@@ -223,8 +223,13 @@ void L2ProjectionOperator::assembleMassMatrix(
     // Initialize output variables.
     Teuchos::RCP<const Teuchos::Comm<int>> range_comm =
         range_space->entitySet()->communicator();
-    mass_matrix =
-        Tpetra::createCrsMatrix<Scalar, LO, GO>( this->getRangeMap() );
+
+    GO num_rows = this->getRangeMap()->getGlobalNumElements();
+
+    // Make an array of maps to let us count up the size of each row map
+
+    std::vector<std::map<GO, int>> array_of_maps(num_rows);
+
     range_ip_set = Teuchos::rcp( new IntegrationPointSet( range_comm ) );
 
     // Get function space objects.
@@ -252,6 +257,32 @@ void L2ProjectionOperator::assembleMassMatrix(
     EntityIterator range_it;
     EntityIterator range_begin = range_iterator.begin();
     EntityIterator range_end = range_iterator.end();
+
+    for ( range_it = range_begin; range_it != range_end; ++range_it )
+    {
+        // Get the support ids of the entity.
+        range_shape_function->entitySupportIds( *range_it, range_support_ids );
+
+        // Fill the non-zero values so we can count them up
+        range_cardinality = range_support_ids.size();
+        for ( int ni = 0; ni < range_cardinality; ++ni )
+        {
+            GO row = range_support_ids[ni];
+            for(GO lcol = 0; lcol < range_support_ids.size(); lcol++){
+                GO col = range_support_ids[lcol];
+                (array_of_maps[row])[col] = 1;
+            }
+        }
+    }
+
+    int row_max_entries = 0;
+    for(int row = 0; row < num_rows; row++)
+       row_max_entries = (row_max_entries < array_of_maps[row].size()) ? array_of_maps[row].size() : row_max_entries;
+
+    mass_matrix =
+        Tpetra::createCrsMatrix<Scalar, LO, GO>( this->getRangeMap(), row_max_entries );
+
+
     for ( range_it = range_begin; range_it != range_end; ++range_it )
     {
         // Get the support ids of the entity.
@@ -302,6 +333,7 @@ void L2ProjectionOperator::assembleMassMatrix(
                     mm_values[nj] += temp * shape_evals[p][nj];
                 }
             }
+
             mass_matrix->insertGlobalValues( range_support_ids[ni],
                                              range_support_ids(), mm_values() );
         }
@@ -325,6 +357,12 @@ void L2ProjectionOperator::assembleCouplingMatrix(
     // Get the parallel communicator.
     Teuchos::RCP<const Teuchos::Comm<int>> comm =
         domain_space->entitySet()->communicator();
+
+    GO num_rows = this->getRangeMap()->getGlobalNumElements();
+
+    // Make an array of maps to let us count up the size of each row map
+
+    std::vector<std::map<GO, int>> array_of_maps(num_rows);
 
     // Get the physical dimension.
     int physical_dimension = domain_space->entitySet()->physicalDimension();
@@ -434,10 +472,6 @@ void L2ProjectionOperator::assembleCouplingMatrix(
     export_shape_evals.clear();
     export_support_ids.clear();
 
-    // Allocate the coupling matrix.
-    coupling_matrix =
-        Tpetra::createCrsMatrix<Scalar, LO, GO>( this->getRangeMap() );
-
     // Construct the entries of the coupling matrix.
     Teuchos::Array<EntityId> ip_entity_ids;
     Teuchos::Array<EntityId>::const_iterator ip_entity_id_it;
@@ -454,6 +488,58 @@ void L2ProjectionOperator::assembleCouplingMatrix(
     int domain_cardinality = 0;
     double temp = 0.0;
     int ip_index;
+
+    for ( domain_it = domain_begin; domain_it != domain_end; ++domain_it )
+    {
+        // Get the domain Support ids supporting the domain entity.
+        domain_space->shapeFunction()->entitySupportIds( *domain_it,
+                                                         domain_support_ids );
+
+        // Get the integration points that mapped into this domain entity.
+        psearch.getRangeEntitiesFromDomain( domain_it->id(), ip_entity_ids );
+
+        // Sum into the global coupling matrix row at each integration point.
+        for ( ip_entity_id_it = ip_entity_ids.begin();
+              ip_entity_id_it != ip_entity_ids.end(); ++ip_entity_id_it )
+        {
+            // Get the local data id.
+            lid_pair.first = *ip_entity_id_it;
+            lid_pair.second = domain_it->id();
+            local_id = ip_domain_lid_map.find( lid_pair )->second;
+
+            // Get the parametric coordinates of the integration point in the
+            // domain entity.
+            psearch.rangeParametricCoordinatesInDomain(
+                domain_it->id(), *ip_entity_id_it, ip_parametric_coords );
+
+            // Evaluate the shape function at the integration point
+            // parametric coordinates.
+            domain_space->shapeFunction()->evaluateValue(
+                *domain_it, ip_parametric_coords, domain_shape_values );
+
+            // Fill the coupling matrix.
+            range_cardinality = import_shape_evals[ip_stride * local_id];
+            domain_cardinality = domain_shape_values.size();
+            for ( int i = 0; i < range_cardinality; ++i )
+            {
+                ip_index = ip_stride * local_id + i + 1;
+
+                for(int lcol = 0; lcol < domain_cardinality; lcol++){
+                    int col = domain_support_ids[lcol];
+                    (array_of_maps[import_support_ids[ip_index]])[col] = 1;
+                }
+            }
+        }
+    }
+
+    int row_max_entries = 0;
+    for(int row = 0; row < num_rows; row++)
+       row_max_entries = (row_max_entries < array_of_maps[row].size()) ? array_of_maps[row].size() : row_max_entries;
+
+    // Allocate the coupling matrix.
+    coupling_matrix =
+        Tpetra::createCrsMatrix<Scalar, LO, GO>( this->getRangeMap(),  row_max_entries );
+
     for ( domain_it = domain_begin; domain_it != domain_end; ++domain_it )
     {
         // Get the domain Support ids supporting the domain entity.

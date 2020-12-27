@@ -98,6 +98,10 @@ Intrepid::FieldContainer<double> STKMeshHelpers::extractEntityNodeCoordinates(
         {
             node_coords =
                 stk::mesh::field_data( *coord_field, stk_entities[c] );
+            if(!node_coords){
+               std::cerr << "Node coords is null!" << std::endl;
+               exit(0);
+            }
             for ( int d = 0; d < space_dim; ++d )
             {
                 coords( c, 0, d ) = node_coords[d];

@@ -247,7 +247,18 @@ void ParallelSearch::search(
         Teuchos::Array<EntityId> import_missed( num_import_missed );
         Teuchos::ArrayView<const EntityId> missed_view =
             missed_range_entity_ids();
-        missed_range_dist.doPostsAndWaits( missed_view, 1, import_missed() );
+        EntityIdView missed_kokkos("DTK:ParallelSearch::search::missed_kokkos", missed_range_entity_ids.size()); 
+        //IKT, 2/21/2022: imssed_range_entity_ids into missed_kokkos.  Ideally we'd want to create missed_kokkos
+        //from the get-go but punting on this for now
+        for (int i = 0; i < missed_range_entity_ids.size(); ++i) {
+          missed_kokkos(i) = missed_range_entity_ids[i]; 
+        }
+        EntityIdView import_missed_kokkos("DTK:ParallelSearch::search::import_missed_kokkos", num_import_missed); 
+        missed_range_dist.doPostsAndWaits( missed_kokkos, 1, import_missed_kokkos );
+        //IKT, 2/21/2022: copy import_missed_kokkos back into import_missed for output.  
+        for (int i = 0; i < num_import_missed; ++i) {
+          import_missed[i] = import_missed_kokkos(i); 
+        }
 
         // Back-communicate the found entities.
         Tpetra::Distributor found_range_dist( d_comm );

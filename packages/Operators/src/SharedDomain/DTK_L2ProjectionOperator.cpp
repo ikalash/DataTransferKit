@@ -62,6 +62,12 @@
 
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include "Kokkos_DefaultNode.hpp"
+typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> NodeType;
+using device_t = typename NodeType::device_type;
+using mem_space = typename device_t::memory_space;
+
 namespace DataTransferKit
 {
 //---------------------------------------------------------------------------//
@@ -442,17 +448,72 @@ void L2ProjectionOperator::assembleCouplingMatrix(
     Tpetra::Distributor range_to_domain_dist( comm );
     int num_import = range_to_domain_dist.createFromSends( export_ranks() );
     Teuchos::Array<EntityId> import_ip_domain_ids( 2 * num_import );
-    range_to_domain_dist.doPostsAndWaits( export_ip_domain_ids().getConst(), 2,
-                                          import_ip_domain_ids() );
+    using EntityIdView = Kokkos::View<EntityId*, mem_space>;
+    EntityIdView export_ip_domain_ids_kokkos("DTK::L2ProjectionOperator::assembleCouplingMatrix::export_ip_domain_ids_kokkos", 
+		                                export_ip_domain_ids.size()); 
+    //IKT, 2/21/2022: export_ip_domain_ids into export_ip_domain_ids_kokkos.  Ideally we'd want to create export_ip_domain_ids_kokkos
+    //from the get-go but punting on this for now
+    for (int i = 0; i < export_ip_domain_ids.size(); ++i) {
+      export_ip_domain_ids_kokkos(i) = export_ip_domain_ids[i]; 
+    }
+    EntityIdView import_ip_domain_ids_kokkos("DTK::L2ProjectionOperator::assembleCouplingMatrix::import_ip_domain_ids_kokkos", 
+		                                2 * num_import); 
+    range_to_domain_dist.doPostsAndWaits( export_ip_domain_ids_kokkos, 2,
+                                          import_ip_domain_ids_kokkos );
+    //IKT, 2/21/2022: copy import_data_kokkos back into import_data for output.  
+    for (int i = 0; i < 2 * num_import; ++i) {
+      import_ip_domain_ids[i] = import_ip_domain_ids_kokkos(i); 
+    }
     Teuchos::Array<double> import_measures_weights( num_import );
-    range_to_domain_dist.doPostsAndWaits( export_measures_weights().getConst(),
-                                          1, import_measures_weights() );
+    using DoubleView = Kokkos::View<double*, mem_space>;
+    DoubleView export_measures_weights_kokkos("DTK::L2ProjectionOperator::assembleCouplingMatrix::export_measures_weights_kokkos", 
+		                                export_measures_weights.size()); 
+    //IKT, 2/21/2022: export_measures_weights into export_measures_weights_kokkos.  Ideally we'd want to create 
+    //export_measures_weights_kokkos from the get-go but punting on this for now
+    for (int i = 0; i < export_measures_weights.size(); ++i) {
+      export_measures_weights_kokkos(i) = export_measures_weights[i]; 
+    }
+    DoubleView import_measures_weights_kokkos("DTK::L2ProjectionOperator::assembleCouplingMatrix::import_measures_weights_kokkos", 
+		                                num_import); 
+    range_to_domain_dist.doPostsAndWaits( export_measures_weights_kokkos,
+                                          1, import_measures_weights_kokkos );
+    //IKT, 2/21/2022: copy import_measures_weights_kokkos back into import_measures_weights for output.  
+    for (int i = 0; i < num_import; ++i) {
+      import_measures_weights[i] = import_measures_weights_kokkos(i); 
+    }
     Teuchos::Array<double> import_shape_evals( ip_stride * num_import );
-    range_to_domain_dist.doPostsAndWaits( export_shape_evals().getConst(),
-                                          ip_stride, import_shape_evals() );
+    DoubleView export_shape_evals_kokkos("DTK::L2ProjectionOperator::assembleCouplingMatrix::export_shape_evals_kokkos", 
+		                                export_shape_evals.size()); 
+    //IKT, 2/21/2022: export_shape_evals into export_shape_evals_kokkos.  Ideally we'd want to create 
+    //export_shape_evals_kokkos from the get-go but punting on this for now
+    for (int i = 0; i < export_shape_evals.size(); ++i) {
+      export_shape_evals_kokkos(i) = export_shape_evals[i]; 
+    }
+    DoubleView import_shape_evals_kokkos("DTK::L2ProjectionOperator::assembleCouplingMatrix::import_shape_evals_kokkos", 
+		                                ip_stride * num_import); 
+    range_to_domain_dist.doPostsAndWaits( export_shape_evals_kokkos,
+                                          ip_stride, import_shape_evals_kokkos );
+    //IKT, 2/21/2022: copy import_shape_evals_kokkos back into import_shape_evals for output.  
+    for (int i = 0; i < ip_stride * num_import; ++i) {
+      import_shape_evals[i] = import_shape_evals_kokkos(i); 
+    }
     Teuchos::Array<SupportId> import_support_ids( ip_stride * num_import );
-    range_to_domain_dist.doPostsAndWaits( export_support_ids().getConst(),
-                                          ip_stride, import_support_ids() );
+    using SupportIdView = Kokkos::View<SupportId*, mem_space>;
+    DoubleView export_support_ids_kokkos("DTK::L2ProjectionOperator::assembleCouplingMatrix::export_support_ids_kokkos", 
+		                                export_support_ids.size()); 
+    //IKT, 2/21/2022: export_support_ids into export_support_ids_kokkos.  Ideally we'd want to create 
+    //export_support_ids_kokkos from the get-go but punting on this for now
+    for (int i = 0; i < export_support_ids.size(); ++i) {
+      export_support_ids_kokkos(i) = export_support_ids[i]; 
+    }
+    DoubleView import_support_ids_kokkos("DTK::L2ProjectionOperator::assembleCouplingMatrix::import_support_ids_kokkos", 
+		                                ip_stride * num_import); 
+    range_to_domain_dist.doPostsAndWaits( export_support_ids_kokkos,
+                                          ip_stride, import_support_ids_kokkos );
+    //IKT, 2/21/2022: copy import_support_ids_kokkos back into import_support_ids for output.  
+    for (int i = 0; i < ip_stride * num_import; ++i) {
+      import_support_ids[i] = import_support_ids_kokkos(i); 
+    }
 
     // Map the ip-domain pairs to a local id.
     std::map<std::pair<EntityId, EntityId>, int> ip_domain_lid_map;

@@ -54,7 +54,6 @@
 typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> NodeType;
 using device_t = typename NodeType::device_type;
 using mem_space = typename device_t::memory_space;
-using DoubleView = Kokkos::View<double*, mem_space>;
 
 namespace DataTransferKit
 {
@@ -70,7 +69,6 @@ CenterDistributor<DIM>::CenterDistributor(
     Teuchos::Array<double> &target_decomp_source_centers )
     : d_distributor( new Tpetra::Distributor( comm ) )
 {
-    //Kokkos::initialize();
     DTK_REQUIRE( 0 == source_centers.size() % DIM );
     DTK_REQUIRE( 0 == target_centers.size() % DIM );
 
@@ -134,6 +132,7 @@ CenterDistributor<DIM>::CenterDistributor(
     // Unroll the coordinates to handle cases where single source centers
     // may have multiple destinations.
     Teuchos::Array<unsigned>::const_iterator export_id_it;
+    using DoubleView = Kokkos::View<double*, mem_space>;
     DoubleView src_coords("DTK:CenterDistributor:src_coords", d_num_exports * DIM); 
     for ( int n = 0; n < d_num_exports; ++n )
     {
@@ -163,7 +162,6 @@ CenterDistributor<DIM>::CenterDistributor(
 template <int DIM>
 CenterDistributor<DIM>::~CenterDistributor()
 {
-  //Kokkos::finalize(); 
 }
 //---------------------------------------------------------------------------//
 /*!
@@ -176,6 +174,7 @@ void CenterDistributor<DIM>::distribute(
     const Teuchos::ArrayView<const T> &source_decomp_data,
     const Teuchos::ArrayView<T> &target_decomp_data ) const
 {
+    using TView = Kokkos::View<T*, mem_space>;
     DTK_REQUIRE( d_num_imports == target_decomp_data.size() );
 
     // Unroll the source data to handle cases where single data points may
@@ -189,11 +188,26 @@ void CenterDistributor<DIM>::distribute(
         DTK_CHECK( *export_id_it < source_decomp_data.size() );
         *src_it = source_decomp_data[*export_id_it];
     }
+    TView src_data_kokkos("DTK:CenterDistributor:distribute::src_data_kokkos", d_num_exports); 
+    //IKT, 2/21/2022: copy src_data into src_data_kokkos.  Ideally we'd want to create src_data_kokkos
+    //from the get-go but punting on this for now
+    for (int i = 0; i < d_num_exports; ++i) {
+      src_data_kokkos(i) = src_data[i]; 
+    }
+    TView target_decomp_data_kokkos("DTK:CenterDistributor:distribute::target_decomp_data_kokkos", target_decomp_data.size()); 
+    //IKT, 2/21/2022: copy target_decomp_data into target_decomp_data_kokkos.  
+    //Ideally we'd want to change this routine to pass in a KokkosView of target_decomp_data, 
+    //but punting on this for now
+    for (int i = 0; i < target_decomp_data.size(); ++i) {
+      target_decomp_data_kokkos(i) = target_decomp_data[i]; 
+    }
 
     // Distribute.
-    Teuchos::ArrayView<const T> src_view = src_data();
-    std::cout << "IKT before doPostsAndWaits!\n"; 
-    d_distributor->doPostsAndWaits( src_view, 1, target_decomp_data );
+    d_distributor->doPostsAndWaits( src_data_kokkos, 1, target_decomp_data_kokkos );
+    //IKT, 2/21/2022: another unnecessary copy...
+    for (int i = 0; i < target_decomp_data.size(); ++i) {
+      target_decomp_data[i] = target_decomp_data_kokkos(i); 
+    }
 }
 
 //---------------------------------------------------------------------------//

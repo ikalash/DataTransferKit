@@ -43,6 +43,12 @@
 
 #include <Tpetra_Distributor.hpp>
 
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include "Kokkos_DefaultNode.hpp"
+typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> NodeType;
+using device_t = typename NodeType::device_type;
+using mem_space = typename device_t::memory_space;
+
 namespace DataTransferKit
 {
 //---------------------------------------------------------------------------//
@@ -205,9 +211,21 @@ void ParallelSearch::search(
     Tpetra::Distributor domain_to_range_dist( d_comm );
     int num_import =
         domain_to_range_dist.createFromSends( export_range_ranks() );
+    using EntityIdView = Kokkos::View<EntityId*, mem_space>;
+    EntityIdView export_data_kokkos("DTK:ParallelSearch::search::export_data_kokkos", export_data.size()); 
+    //IKT, 2/21/2022: export_data into export_data_kokkos.  Ideally we'd want to create export_data_kokkos
+    //from the get-go but punting on this for now
+    for (int i = 0; i < export_data.size(); ++i) {
+      export_data_kokkos(i) = export_data[i]; 
+    }
     Teuchos::Array<EntityId> domain_data( 3 * num_import );
-    Teuchos::ArrayView<const EntityId> export_data_view = export_data();
-    domain_to_range_dist.doPostsAndWaits( export_data_view, 3, domain_data() );
+    EntityIdView domain_data_kokkos("DTK:ParallelSearch::search::domain_data_kokkos", 3 * num_import); 
+    //Teuchos::ArrayView<const EntityId> export_data_view = export_data();
+    domain_to_range_dist.doPostsAndWaits( export_data_kokkos, 3, domain_data_kokkos );
+    //IKT, 2/21/2022: copy domain_data_kokkos back into domain_data for output.  
+    for (int i = 0; i < 3 * num_import; ++i) {
+      domain_data[i] = domain_data_kokkos(i); 
+    }
 
     // Store the domain data in the range parallel decomposition.
     for ( int i = 0; i < num_import; ++i )

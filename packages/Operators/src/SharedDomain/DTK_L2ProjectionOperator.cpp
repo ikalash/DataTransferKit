@@ -482,8 +482,21 @@ void L2ProjectionOperator::assembleCouplingMatrix(
       import_measures_weights[i] = import_measures_weights_kokkos(i); 
     }
     Teuchos::Array<double> import_shape_evals( ip_stride * num_import );
-    range_to_domain_dist.doPostsAndWaits( export_shape_evals().getConst(),
-                                          ip_stride, import_shape_evals() );
+    DoubleView export_shape_evals_kokkos("DTK::L2ProjectionOperator::assembleCouplingMatrix::export_shape_evals_kokkos", 
+		                                export_shape_evals.size()); 
+    //IKT, 2/21/2022: export_shape_evals into export_shape_evals_kokkos.  Ideally we'd want to create 
+    //export_shape_evals_kokkos from the get-go but punting on this for now
+    for (int i = 0; i < export_shape_evals.size(); ++i) {
+      export_shape_evals_kokkos(i) = export_shape_evals[i]; 
+    }
+    DoubleView import_shape_evals_kokkos("DTK::L2ProjectionOperator::assembleCouplingMatrix::import_shape_evals_kokkos", 
+		                                ip_stride * num_import); 
+    range_to_domain_dist.doPostsAndWaits( export_shape_evals_kokkos,
+                                          ip_stride, import_shape_evals_kokkos );
+    //IKT, 2/21/2022: copy import_shape_evals_kokkos back into import_shape_evals for output.  
+    for (int i = 0; i < ip_stride * num_import; ++i) {
+      import_shape_evals[i] = import_shape_evals_kokkos(i); 
+    }
     Teuchos::Array<SupportId> import_support_ids( ip_stride * num_import );
     range_to_domain_dist.doPostsAndWaits( export_support_ids().getConst(),
                                           ip_stride, import_support_ids() );

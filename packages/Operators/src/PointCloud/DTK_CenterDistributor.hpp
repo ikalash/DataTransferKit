@@ -73,6 +73,9 @@ class CenterDistributor
                        const double radius,
                        Teuchos::Array<double> &target_decomp_source_centers );
 
+    // Destructor
+    ~CenterDistributor(); 
+
     // Get the number of source centers that will be distributed from this
     // process.
     int getNumExports() const { return d_num_exports; }

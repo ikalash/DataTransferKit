@@ -73,6 +73,7 @@ Teuchos::RCP<const Teuchos::Comm<int>> getDefaultComm()
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( CenterDistributor, dim_2_test )
 {
+    Kokkos::initialize();
     Teuchos::RCP<const Teuchos::Comm<int>> comm = getDefaultComm();
     int rank = comm->getRank();
     int size = comm->getSize();
@@ -125,11 +126,13 @@ TEUCHOS_UNIT_TEST( CenterDistributor, dim_2_test )
     {
         TEST_EQUALITY( tgt_data[i], ( 4.0 + i ) * rank );
     }
+    Kokkos::finalize(); 
 }
 
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( CenterDistributor, dim_3_test )
 {
+    Kokkos::initialize(); 
     Teuchos::RCP<const Teuchos::Comm<int>> comm = getDefaultComm();
     int rank = comm->getRank();
     int size = comm->getSize();
@@ -186,6 +189,7 @@ TEUCHOS_UNIT_TEST( CenterDistributor, dim_3_test )
     {
         TEST_EQUALITY( tgt_data[i], ( 4.0 + i ) * rank );
     }
+    Kokkos::finalize(); 
 }
 
 //---------------------------------------------------------------------------//

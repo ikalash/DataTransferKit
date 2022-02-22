@@ -49,6 +49,13 @@
 
 #include "DTK_DBC.hpp"
 
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include "Kokkos_DefaultNode.hpp"
+typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> NodeType;
+using device_t = typename NodeType::device_type;
+using mem_space = typename device_t::memory_space;
+using DoubleView = Kokkos::View<double*, mem_space>;
+
 namespace DataTransferKit
 {
 //---------------------------------------------------------------------------//
@@ -63,6 +70,7 @@ CenterDistributor<DIM>::CenterDistributor(
     Teuchos::Array<double> &target_decomp_source_centers )
     : d_distributor( new Tpetra::Distributor( comm ) )
 {
+    //Kokkos::initialize();
     DTK_REQUIRE( 0 == source_centers.size() % DIM );
     DTK_REQUIRE( 0 == target_centers.size() % DIM );
 
@@ -126,20 +134,37 @@ CenterDistributor<DIM>::CenterDistributor(
     // Unroll the coordinates to handle cases where single source centers
     // may have multiple destinations.
     Teuchos::Array<unsigned>::const_iterator export_id_it;
-    Teuchos::Array<double> src_coords( d_num_exports * DIM );
+    DoubleView src_coords("DTK:CenterDistributor:src_coords", d_num_exports * DIM); 
     for ( int n = 0; n < d_num_exports; ++n )
     {
-        src_coords( DIM * n, DIM )
-            .assign( source_centers( DIM * d_export_ids[n], DIM ) );
+      for (int i = 0; i < DIM; ++i) {
+	src_coords(DIM*n + i) =  source_centers[DIM * d_export_ids[n] + i]; 
+      }
     }
 
     // Move the source center coordinates to the target decomposition.
-    Teuchos::ArrayView<const double> src_coords_view = src_coords();
+    //Teuchos::ArrayView<const double> src_coords_view = src_coords();
+    DoubleView target_decomp_source_centers_kokkos("DTK:CenterDistributor:target_decomp_source_centers", d_num_imports * DIM); 
+    d_distributor->doPostsAndWaits( src_coords, DIM,
+                                    target_decomp_source_centers_kokkos );
     target_decomp_source_centers.resize( d_num_imports * DIM );
-    d_distributor->doPostsAndWaits( src_coords_view, DIM,
-                                    target_decomp_source_centers() );
+    //IKT, 2/21/2022: copy target_decomp_source_centers_kokkos into target_decomp_source_centers
+    //To do this correctly, need to change the type of arguments in this routine to be a Kokkos::View but
+    //punting on this for now
+    for (int i = 0; i < d_num_imports * DIM; ++i) {
+      target_decomp_source_centers[i] = target_decomp_source_centers_kokkos(i); 
+    }
 }
 
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Destructor.
+ */
+template <int DIM>
+CenterDistributor<DIM>::~CenterDistributor()
+{
+  //Kokkos::finalize(); 
+}
 //---------------------------------------------------------------------------//
 /*!
  * \brief Given a set of scalar values at the given source centers in the
@@ -167,6 +192,7 @@ void CenterDistributor<DIM>::distribute(
 
     // Distribute.
     Teuchos::ArrayView<const T> src_view = src_data();
+    std::cout << "IKT before doPostsAndWaits!\n"; 
     d_distributor->doPostsAndWaits( src_view, 1, target_decomp_data );
 }
 

@@ -498,8 +498,22 @@ void L2ProjectionOperator::assembleCouplingMatrix(
       import_shape_evals[i] = import_shape_evals_kokkos(i); 
     }
     Teuchos::Array<SupportId> import_support_ids( ip_stride * num_import );
-    range_to_domain_dist.doPostsAndWaits( export_support_ids().getConst(),
-                                          ip_stride, import_support_ids() );
+    using SupportIdView = Kokkos::View<SupportId*, mem_space>;
+    DoubleView export_support_ids_kokkos("DTK::L2ProjectionOperator::assembleCouplingMatrix::export_support_ids_kokkos", 
+		                                export_support_ids.size()); 
+    //IKT, 2/21/2022: export_support_ids into export_support_ids_kokkos.  Ideally we'd want to create 
+    //export_support_ids_kokkos from the get-go but punting on this for now
+    for (int i = 0; i < export_support_ids.size(); ++i) {
+      export_support_ids_kokkos(i) = export_support_ids[i]; 
+    }
+    DoubleView import_support_ids_kokkos("DTK::L2ProjectionOperator::assembleCouplingMatrix::import_support_ids_kokkos", 
+		                                ip_stride * num_import); 
+    range_to_domain_dist.doPostsAndWaits( export_support_ids_kokkos,
+                                          ip_stride, import_support_ids_kokkos );
+    //IKT, 2/21/2022: copy import_support_ids_kokkos back into import_support_ids for output.  
+    for (int i = 0; i < ip_stride * num_import; ++i) {
+      import_support_ids[i] = import_support_ids_kokkos(i); 
+    }
 
     // Map the ip-domain pairs to a local id.
     std::map<std::pair<EntityId, EntityId>, int> ip_domain_lid_map;

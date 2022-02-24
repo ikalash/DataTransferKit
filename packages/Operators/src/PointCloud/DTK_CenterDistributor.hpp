@@ -74,7 +74,7 @@ class CenterDistributor
                        Teuchos::Array<double> &target_decomp_source_centers );
 
     // Destructor
-    ~CenterDistributor(); 
+    ~CenterDistributor();
 
     // Get the number of source centers that will be distributed from this
     // process.

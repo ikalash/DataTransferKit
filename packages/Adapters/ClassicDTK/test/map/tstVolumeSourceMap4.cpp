@@ -106,7 +106,7 @@ class MyEvaluator
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( VolumeSourceMap, one_to_many_parallel )
 {
-    Kokkos::initialize(); 
+    Kokkos::initialize();
     using namespace DataTransferKit;
     typedef FieldContainer<double> FieldType;
 

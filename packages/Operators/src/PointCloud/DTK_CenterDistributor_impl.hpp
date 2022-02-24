@@ -133,17 +133,15 @@ CenterDistributor<DIM>::CenterDistributor(
     // may have multiple destinations.
     Teuchos::Array<unsigned>::const_iterator export_id_it;
     using DoubleView = Kokkos::View<double*, mem_space>;
-    DoubleView src_coords("DTK:CenterDistributor:src_coords", d_num_exports * DIM); 
+    DoubleView src_coords("DTK:CenterDistributor:src_coords", d_num_exports * DIM);
     for ( int n = 0; n < d_num_exports; ++n )
     {
-      for (int i = 0; i < DIM; ++i) {
-	src_coords(DIM*n + i) =  source_centers[DIM * d_export_ids[n] + i]; 
-      }
+      for (int i = 0; i < DIM; ++i) {src_coords(DIM*n + i) =  source_centers[DIM * d_export_ids[n] + i]; }
     }
 
     // Move the source center coordinates to the target decomposition.
     //Teuchos::ArrayView<const double> src_coords_view = src_coords();
-    DoubleView target_decomp_source_centers_kokkos("DTK:CenterDistributor:target_decomp_source_centers", d_num_imports * DIM); 
+    DoubleView target_decomp_source_centers_kokkos("DTK:CenterDistributor:target_decomp_source_centers", d_num_imports * DIM);
     d_distributor->doPostsAndWaits( src_coords, DIM,
                                     target_decomp_source_centers_kokkos );
     target_decomp_source_centers.resize( d_num_imports * DIM );
@@ -151,7 +149,7 @@ CenterDistributor<DIM>::CenterDistributor(
     //To do this correctly, need to change the type of arguments in this routine to be a Kokkos::View but
     //punting on this for now
     for (int i = 0; i < d_num_imports * DIM; ++i) {
-      target_decomp_source_centers[i] = target_decomp_source_centers_kokkos(i); 
+      target_decomp_source_centers[i] = target_decomp_source_centers_kokkos(i);
     }
 }
 
@@ -188,25 +186,25 @@ void CenterDistributor<DIM>::distribute(
         DTK_CHECK( *export_id_it < source_decomp_data.size() );
         *src_it = source_decomp_data[*export_id_it];
     }
-    TView src_data_kokkos("DTK:CenterDistributor:distribute::src_data_kokkos", d_num_exports); 
+    TView src_data_kokkos("DTK:CenterDistributor:distribute::src_data_kokkos", d_num_exports);
     //IKT, 2/21/2022: copy src_data into src_data_kokkos.  Ideally we'd want to create src_data_kokkos
     //from the get-go but punting on this for now
     for (int i = 0; i < d_num_exports; ++i) {
-      src_data_kokkos(i) = src_data[i]; 
+      src_data_kokkos(i) = src_data[i];
     }
-    TView target_decomp_data_kokkos("DTK:CenterDistributor:distribute::target_decomp_data_kokkos", target_decomp_data.size()); 
-    //IKT, 2/21/2022: copy target_decomp_data into target_decomp_data_kokkos.  
-    //Ideally we'd want to change this routine to pass in a KokkosView of target_decomp_data, 
+    TView target_decomp_data_kokkos("DTK:CenterDistributor:distribute::target_decomp_data_kokkos", target_decomp_data.size());
+    //IKT, 2/21/2022: copy target_decomp_data into target_decomp_data_kokkos.
+    //Ideally we'd want to change this routine to pass in a KokkosView of target_decomp_data,
     //but punting on this for now
     for (int i = 0; i < target_decomp_data.size(); ++i) {
-      target_decomp_data_kokkos(i) = target_decomp_data[i]; 
+      target_decomp_data_kokkos(i) = target_decomp_data[i];
     }
 
     // Distribute.
     d_distributor->doPostsAndWaits( src_data_kokkos, 1, target_decomp_data_kokkos );
     //IKT, 2/21/2022: another unnecessary copy...
     for (int i = 0; i < target_decomp_data.size(); ++i) {
-      target_decomp_data[i] = target_decomp_data_kokkos(i); 
+      target_decomp_data[i] = target_decomp_data_kokkos(i);
     }
 }
 

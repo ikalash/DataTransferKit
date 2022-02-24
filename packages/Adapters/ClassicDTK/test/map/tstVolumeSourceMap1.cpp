@@ -244,7 +244,7 @@ void buildCoordinateField( int my_rank, int my_size, int num_points,
 TEUCHOS_UNIT_TEST( VolumeSourceMap, cylinder_test )
 {
     using namespace DataTransferKit;
-    Kokkos::initialize(); 
+    Kokkos::initialize();
     // Setup communication.
     Teuchos::RCP<const Teuchos::Comm<int>> comm = getDefaultComm<int>();
     int my_rank = comm->getRank();
@@ -351,7 +351,7 @@ TEUCHOS_UNIT_TEST( VolumeSourceMap, cylinder_test )
 TEUCHOS_UNIT_TEST( VolumeSourceMap, box_test )
 {
     using namespace DataTransferKit;
-    Kokkos::initialize(); 
+    Kokkos::initialize();
 
     // Setup communication.
     Teuchos::RCP<const Teuchos::Comm<int>> comm = getDefaultComm<int>();

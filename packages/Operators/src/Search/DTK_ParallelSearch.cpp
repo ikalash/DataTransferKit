@@ -212,18 +212,18 @@ void ParallelSearch::search(
     int num_import =
         domain_to_range_dist.createFromSends( export_range_ranks() );
     using EntityIdView = Kokkos::View<EntityId*, mem_space>;
-    EntityIdView export_data_kokkos("DTK:ParallelSearch::search::export_data_kokkos", export_data.size()); 
+    EntityIdView export_data_kokkos("DTK:ParallelSearch::search::export_data_kokkos", export_data.size());
     //IKT, 2/21/2022: export_data into export_data_kokkos.  Ideally we'd want to create export_data_kokkos
     //from the get-go but punting on this for now
     for (int i = 0; i < export_data.size(); ++i) {
-      export_data_kokkos(i) = export_data[i]; 
+      export_data_kokkos(i) = export_data[i];
     }
     Teuchos::Array<EntityId> domain_data( 3 * num_import );
-    EntityIdView domain_data_kokkos("DTK:ParallelSearch::search::domain_data_kokkos", 3 * num_import); 
+    EntityIdView domain_data_kokkos("DTK:ParallelSearch::search::domain_data_kokkos", 3 * num_import);
     domain_to_range_dist.doPostsAndWaits( export_data_kokkos, 3, domain_data_kokkos );
-    //IKT, 2/21/2022: copy domain_data_kokkos back into domain_data for output.  
+    //IKT, 2/21/2022: copy domain_data_kokkos back into domain_data for output.
     for (int i = 0; i < 3 * num_import; ++i) {
-      domain_data[i] = domain_data_kokkos(i); 
+      domain_data[i] = domain_data_kokkos(i);
     }
 
     // Store the domain data in the range parallel decomposition.
@@ -246,17 +246,17 @@ void ParallelSearch::search(
         Teuchos::Array<EntityId> import_missed( num_import_missed );
         Teuchos::ArrayView<const EntityId> missed_view =
             missed_range_entity_ids();
-        EntityIdView missed_kokkos("DTK:ParallelSearch::search::missed_kokkos", missed_range_entity_ids.size()); 
+        EntityIdView missed_kokkos("DTK:ParallelSearch::search::missed_kokkos", missed_range_entity_ids.size());
         //IKT, 2/21/2022: missed_range_entity_ids into missed_kokkos.  Ideally we'd want to create missed_kokkos
         //from the get-go but punting on this for now
         for (int i = 0; i < missed_range_entity_ids.size(); ++i) {
-          missed_kokkos(i) = missed_range_entity_ids[i]; 
+          missed_kokkos(i) = missed_range_entity_ids[i];
         }
-        EntityIdView import_missed_kokkos("DTK:ParallelSearch::search::import_missed_kokkos", num_import_missed); 
+        EntityIdView import_missed_kokkos("DTK:ParallelSearch::search::import_missed_kokkos", num_import_missed);
         missed_range_dist.doPostsAndWaits( missed_kokkos, 1, import_missed_kokkos );
-        //IKT, 2/21/2022: copy import_missed_kokkos back into import_missed for output.  
+        //IKT, 2/21/2022: copy import_missed_kokkos back into import_missed for output.
         for (int i = 0; i < num_import_missed; ++i) {
-          import_missed[i] = import_missed_kokkos(i); 
+          import_missed[i] = import_missed_kokkos(i);
         }
 
         // Back-communicate the found entities.
@@ -264,17 +264,16 @@ void ParallelSearch::search(
         int num_import_found =
             found_range_dist.createFromSends( found_range_ranks() );
         Teuchos::Array<EntityId> import_found( num_import_found );
-        EntityIdView found_kokkos("DTK:ParallelSearch::search::found_kokkos", found_range_entity_ids.size()); 
-        //IKT, 2/21/2022: found_range_entity_ids into found_kokkos.  Ideally we'd want to create found_kokkos
-        //from the get-go but punting on this for now
+        EntityIdView found_kokkos("DTK:ParallelSearch::search::found_kokkos", found_range_entity_ids.size());
+        //IKT, 2/21/2022: found_range_entity_ids into found_kokkos.  Ideally we'd want to create found_kokkos from the get-go, but punting on this for now
         for (int i = 0; i < found_range_entity_ids.size(); ++i) {
-          found_kokkos(i) = found_range_entity_ids[i]; 
+          found_kokkos(i) = found_range_entity_ids[i];
         }
-        EntityIdView import_found_kokkos("DTK:ParallelSearch::search::import_found_kokkos", num_import_found); 
+        EntityIdView import_found_kokkos("DTK:ParallelSearch::search::import_found_kokkos", num_import_found);
         found_range_dist.doPostsAndWaits( found_kokkos, 1, import_found_kokkos );
-        //IKT, 2/21/2022: copy import_found_kokkos back into import_found for output.  
+        //IKT, 2/21/2022: copy import_found_kokkos back into import_found for output.
         for (int i = 0; i < num_import_found; ++i) {
-          import_found[i] = import_found_kokkos(i); 
+          import_found[i] = import_found_kokkos(i);
         }
 
         // Create a unique list of missed entities.

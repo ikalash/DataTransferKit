@@ -215,18 +215,18 @@ void ConsistentInterpolationOperator::setupImpl(
         int num_import = range_to_domain_dist.createFromSends( export_ranks() );
         Teuchos::Array<GO> import_data( 2 * num_import );
         using GOView = Kokkos::View<GO*, mem_space>;
-        GOView export_data_kokkos("DTK::ConsistentInterpolationOperator::setupImpl::export_data_kokkos", export_data.size()); 
+        GOView export_data_kokkos("DTK::ConsistentInterpolationOperator::setupImpl::export_data_kokkos", export_data.size());
         //IKT, 2/21/2022: export_data into export_data_kokkos.  Ideally we'd want to create export_data_kokkos
         //from the get-go but punting on this for now
         for (int i = 0; i < export_data.size(); ++i) {
-          export_data_kokkos(i) = export_data[i]; 
+          export_data_kokkos(i) = export_data[i];
         }
-        GOView import_data_kokkos("DTK::ConsistentInterpolationOperator::setupImpl::import_data_kokkos", 2 * num_import); 
+        GOView import_data_kokkos("DTK::ConsistentInterpolationOperator::setupImpl::import_data_kokkos", 2 * num_import);
         range_to_domain_dist.doPostsAndWaits( export_data_kokkos, 2,
                                               import_data_kokkos );
-        //IKT, 2/21/2022: copy import_data_kokkos back into import_data for output.  
+        //IKT, 2/21/2022: copy import_data_kokkos back into import_data for output.
         for (int i = 0; i < 2 * num_import; ++i) {
-          import_data[i] = import_data_kokkos(i); 
+          import_data[i] = import_data_kokkos(i);
         }
 
         // Map the range entities to their support ids.

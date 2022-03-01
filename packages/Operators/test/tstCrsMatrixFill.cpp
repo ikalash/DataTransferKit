@@ -48,6 +48,12 @@
 
 #include <DTK_Types.hpp>
 
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include "Kokkos_DefaultNode.hpp"
+typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> NodeType;
+using device_t = typename NodeType::device_type;
+using mem_space = typename device_t::memory_space;
+
 //---------------------------------------------------------------------------//
 // Tests
 //---------------------------------------------------------------------------//
@@ -81,14 +87,14 @@ TEUCHOS_UNIT_TEST( CrsMatrix, LocalFill )
     A->fillComplete();
 
     // Check the matrix.
-    Teuchos::ArrayView<const LO> indices_view;
-    Teuchos::ArrayView<const Scalar> values_view;
-    A->getLocalRowView( 0, indices_view, values_view );
-    TEST_EQUALITY( 1, indices_view.size() );
-    TEST_EQUALITY( 1, values_view.size() );
+    typename Tpetra::CrsMatrix<Scalar, int, GO>::local_inds_host_view_type indices_kokkos;
+    typename Tpetra::CrsMatrix<Scalar, int, GO>::values_host_view_type values_kokkos;
+    A->getLocalRowView( 0, indices_kokkos, values_kokkos );
+    TEST_EQUALITY( 1, indices_kokkos.size() );
+    TEST_EQUALITY( 1, values_kokkos.size() );
 
     Scalar test_val = value;
-    TEST_EQUALITY( test_val, values_view[0] );
+    TEST_EQUALITY( test_val, values_kokkos[0] );
 }
 
 //---------------------------------------------------------------------------//
@@ -126,14 +132,14 @@ TEUCHOS_UNIT_TEST( CrsMatrix, EveryoneFill )
     A->fillComplete();
 
     // Check the matrix.
-    Teuchos::ArrayView<const LO> indices_view;
-    Teuchos::ArrayView<const Scalar> values_view;
-    A->getLocalRowView( 0, indices_view, values_view );
-    TEST_EQUALITY( 1, indices_view.size() );
-    TEST_EQUALITY( 1, values_view.size() );
+    typename Tpetra::CrsMatrix<Scalar, int, GO>::local_inds_host_view_type indices_kokkos;
+    typename Tpetra::CrsMatrix<Scalar, int, GO>::values_host_view_type values_kokkos;
+    A->getLocalRowView( 0, indices_kokkos, values_kokkos );
+    TEST_EQUALITY( 1, indices_kokkos.size() );
+    TEST_EQUALITY( 1, values_kokkos.size() );
 
     Scalar test_val = comm_size * value;
-    TEST_EQUALITY( test_val, values_view[0] );
+    TEST_EQUALITY( test_val, values_kokkos[0] );
 }
 
 //---------------------------------------------------------------------------//
@@ -168,14 +174,14 @@ TEUCHOS_UNIT_TEST( CrsMatrix, NotMyFill )
     A->fillComplete();
 
     // Check the matrix.
-    Teuchos::ArrayView<const LO> indices_view;
-    Teuchos::ArrayView<const Scalar> values_view;
-    A->getLocalRowView( 0, indices_view, values_view );
-    TEST_EQUALITY( 1, indices_view.size() );
-    TEST_EQUALITY( 1, values_view.size() );
+    typename Tpetra::CrsMatrix<Scalar, int, GO>::local_inds_host_view_type indices_kokkos;
+    typename Tpetra::CrsMatrix<Scalar, int, GO>::values_host_view_type values_kokkos;
+    A->getLocalRowView( 0, indices_kokkos, values_kokkos );
+    TEST_EQUALITY( 1, indices_kokkos.size() );
+    TEST_EQUALITY( 1, values_kokkos.size() );
 
     Scalar test_val = value;
-    TEST_EQUALITY( test_val, values_view[0] );
+    TEST_EQUALITY( test_val, values_kokkos[0] );
 }
 
 //---------------------------------------------------------------------------//

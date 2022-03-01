@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST( PolynomialMatrix, polynomial_matrix_apply )
     Teuchos::RCP<Tpetra::CrsMatrix<double, int, DataTransferKit::SupportId>>
         P_crs = Teuchos::rcp(
             new Tpetra::CrsMatrix<double, int, DataTransferKit::SupportId>(
-                row_map, col_map, poly_size, Tpetra::StaticProfile ) );
+                row_map, col_map, poly_size ) );
     Teuchos::Array<int> crs_indices( poly_size );
     for ( int j = 0; j < poly_size; ++j )
     {
@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST( PolynomialMatrix, polynomial_matrix_transpose_apply )
     Teuchos::RCP<Tpetra::CrsMatrix<double, int, DataTransferKit::SupportId>>
         P_crs = Teuchos::rcp(
             new Tpetra::CrsMatrix<double, int, DataTransferKit::SupportId>(
-                row_map, col_map, poly_size, Tpetra::StaticProfile ) );
+                row_map, col_map, poly_size ) );
     Teuchos::Array<int> crs_indices( poly_size );
     for ( int j = 0; j < poly_size; ++j )
     {

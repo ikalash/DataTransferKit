@@ -377,7 +377,7 @@ void SharedDomainMap<Mesh, CoordinateField>::apply(
     {
         DTK_REQUIRE(
             target_field_view.size() ==
-            Teuchos::as<GlobalOrdinal>( d_target_map->getNodeNumElements() ) *
+            Teuchos::as<GlobalOrdinal>( d_target_map->getLocalNumElements() ) *
                 target_dim );
     }
 

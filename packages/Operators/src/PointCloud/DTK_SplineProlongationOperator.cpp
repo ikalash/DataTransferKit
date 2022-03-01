@@ -57,7 +57,7 @@ SplineProlongationOperator::SplineProlongationOperator(
 {
     // Create a range map.
     Teuchos::ArrayView<const SupportId> domain_elements =
-        d_domain_map->getNodeElementList();
+        d_domain_map->getLocalElementList();
     d_lda = domain_elements.size();
     Teuchos::Array<SupportId> global_ids;
     SupportId max_id = d_domain_map->getMaxAllGlobalIndex() + 1;

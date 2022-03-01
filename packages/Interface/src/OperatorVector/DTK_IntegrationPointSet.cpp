@@ -191,11 +191,11 @@ void IntegrationPointSet::finalize()
     DTK_CHECK( map->isContiguous() );
     DTK_CHECK( map->getMaxGlobalIndex() - map->getMinGlobalIndex() + 1 ==
                num_local_ip );
-    DTK_CHECK( map->getNodeNumElements() == num_local_ip );
+    DTK_CHECK( map->getLocalNumElements() == num_local_ip );
     d_start_gid = map->getMinGlobalIndex();
 
     // Assign global ids to the points.
-    Teuchos::ArrayView<const EntityId> ip_gids = map->getNodeElementList();
+    Teuchos::ArrayView<const EntityId> ip_gids = map->getLocalElementList();
     for ( EntityId p = 0; p < num_local_ip; ++p )
     {
         d_points[p].d_gid = ip_gids[p];

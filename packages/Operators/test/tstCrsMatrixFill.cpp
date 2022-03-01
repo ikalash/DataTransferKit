@@ -74,7 +74,7 @@ TEUCHOS_UNIT_TEST( CrsMatrix, LocalFill )
 
     // Fill the matrix with global ids.
     Scalar value = 1.0;
-    GO global_row = map->getNodeElementList()[0];
+    GO global_row = map->getLocalElementList()[0];
     Teuchos::Array<GO> indices( 1, global_row );
     Teuchos::Array<Scalar> values( 1, value );
     A->insertGlobalValues( global_row, indices(), values() );

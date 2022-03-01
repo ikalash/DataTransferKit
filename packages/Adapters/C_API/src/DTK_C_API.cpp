@@ -171,11 +171,11 @@ DTK_Map *DTK_Map_create( MPI_Comm comm, double const *src_coord,
 
     // Create the function spaces.
     auto domain_space = createFunctionSpace( teuchos_comm, src_coord,
-                                             domain_map->getNodeElementList(),
+                                             domain_map->getLocalElementList(),
                                              src_layout, src_num, space_dim );
 
     auto range_space = createFunctionSpace( teuchos_comm, tgt_coord,
-                                            range_map->getNodeElementList(),
+                                            range_map->getLocalElementList(),
                                             tgt_layout, tgt_num, space_dim );
 
     // Set up the map.
@@ -207,9 +207,9 @@ void DTK_Map_apply( DTK_Map *dtk_map, double const *src_data,
     auto domain_map = map_operator->getDomainMap();
 
     DataTransferKit::EntityCenteredField src_field(
-        domain_map->getNodeElementList(), field_dim,
+        domain_map->getLocalElementList(), field_dim,
         Teuchos::ArrayRCP<double>( const_cast<double *>( src_data ), 0,
-                                   field_dim * domain_map->getNodeNumElements(),
+                                   field_dim * domain_map->getLocalNumElements(),
                                    false ),
         dtk_entity_centered_field_layout( src_layout ) );
 
@@ -220,9 +220,9 @@ void DTK_Map_apply( DTK_Map *dtk_map, double const *src_data,
     auto range_map = map_operator->getRangeMap();
 
     DataTransferKit::EntityCenteredField tgt_field(
-        range_map->getNodeElementList(), field_dim,
+        range_map->getLocalElementList(), field_dim,
         Teuchos::ArrayRCP<double>(
-            tgt_data, 0, field_dim * range_map->getNodeNumElements(), false ),
+            tgt_data, 0, field_dim * range_map->getLocalNumElements(), false ),
         dtk_entity_centered_field_layout( tgt_layout ) );
 
     DataTransferKit::FieldMultiVector range_vector(

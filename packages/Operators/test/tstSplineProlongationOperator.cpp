@@ -79,7 +79,7 @@ TEUCHOS_UNIT_TEST( SplineProlongationOperator, polynomial_matrix_apply )
     DataTransferKit::SplineProlongationOperator prolongation_op( offset, map );
 
     // Check the prolongator.
-    TEST_EQUALITY( prolongation_op.getRangeMap()->getNodeNumElements(),
+    TEST_EQUALITY( prolongation_op.getRangeMap()->getLocalNumElements(),
                    Teuchos::as<unsigned>( offset + local_size ) );
 
     // Build a random vector to prolongate.

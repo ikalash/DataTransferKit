@@ -52,12 +52,6 @@
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_Map.hpp>
 
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-#include "Kokkos_DefaultNode.hpp"
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> NodeType;
-using device_t = typename NodeType::device_type;
-using mem_space = typename device_t::memory_space;
-
 namespace DataTransferKit
 {
 //---------------------------------------------------------------------------//
@@ -214,20 +208,15 @@ void ConsistentInterpolationOperator::setupImpl(
         Tpetra::Distributor range_to_domain_dist( comm );
         int num_import = range_to_domain_dist.createFromSends( export_ranks() );
         Teuchos::Array<GO> import_data( 2 * num_import );
-        using GOView = Kokkos::View<GO*, mem_space>;
-        GOView export_data_kokkos("DTK::ConsistentInterpolationOperator::setupImpl::export_data_kokkos", export_data.size());
-        //IKT, 2/21/2022: export_data into export_data_kokkos.  Ideally we'd want to create export_data_kokkos
-        //from the get-go but punting on this for now
-        for (int i = 0; i < export_data.size(); ++i) {
-          export_data_kokkos(i) = export_data[i];
-        }
-        GOView import_data_kokkos("DTK::ConsistentInterpolationOperator::setupImpl::import_data_kokkos", 2 * num_import);
-        range_to_domain_dist.doPostsAndWaits( export_data_kokkos, 2,
-                                              import_data_kokkos );
-        //IKT, 2/21/2022: copy import_data_kokkos back into import_data for output.
-        for (int i = 0; i < 2 * num_import; ++i) {
-          import_data[i] = import_data_kokkos(i);
-        }
+        Teuchos::ArrayView<const GO> export_data_view = export_data();
+        using ConstGOView                = Kokkos::View<const GO*, Kokkos::HostSpace>;
+        using GOView                     = Kokkos::View<GO*, Kokkos::HostSpace>;
+        ConstGOView export_data_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(export_data()); 
+        GOView import_data_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(import_data()); 
+        //range_to_domain_dist.doPostsAndWaits( export_data_view, 2,
+        //                                      import_data() );
+        range_to_domain_dist.doPostsAndWaits( export_data_goview, 2,
+                                              import_data_goview );
 
         // Map the range entities to their support ids.
         for ( int i = 0; i < num_import; ++i )

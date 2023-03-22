@@ -67,12 +67,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 ##---------------------------------------------------------------------------##
 # Search tests.
 ##---------------------------------------------------------------------------##
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  CoarseGlobalSearch_test
-#  SOURCES tstCoarseGlobalSearch.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
-#  COMM serial mpi
-#  STANDARD_PASS_OUTPUT
-#  )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CoarseGlobalSearch_test
+  SOURCES tstCoarseGlobalSearch.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CoarseLocalSearch_test
@@ -88,22 +88,22 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  ParallelSearch_test
-#  SOURCES tstParallelSearch.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
-#  COMM serial mpi
-#  STANDARD_PASS_OUTPUT
-#  )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ParallelSearch_test
+  SOURCES tstParallelSearch.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
 
 ##---------------------------------------------------------------------------##
 # SharedDomain tests.
 ##---------------------------------------------------------------------------##
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrixFill_test
-  SOURCES tstCrsMatrixFill.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  CrsMatrixFill_test
+#  SOURCES tstCrsMatrixFill.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
+#  COMM serial mpi
+#  STANDARD_PASS_OUTPUT
+#  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ConsistentInterpolationOperator_test
@@ -152,12 +152,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  PolynomialMatrix_test
-  SOURCES tstPolynomialMatrix.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  PolynomialMatrix_test
+#  SOURCES tstPolynomialMatrix.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
+#  COMM serial mpi
+#  STANDARD_PASS_OUTPUT
+#  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SplineProlongationOperator_test

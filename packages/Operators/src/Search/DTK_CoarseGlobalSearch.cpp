@@ -46,11 +46,7 @@
 
 #include <Tpetra_Distributor.hpp>
 
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-#include "Kokkos_DefaultNode.hpp"
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> NodeType;
-using device_t = typename NodeType::device_type;
-using mem_space = typename device_t::memory_space;
+#include <TeuchosKokkosCompat_config.h>
 
 namespace DataTransferKit
 {
@@ -177,53 +173,35 @@ void CoarseGlobalSearch::search(
     int num_range_import = distributor.createFromSends( send_ranks() );
 
     // Redistribute the range entity ids.
-    using EntityIdView = Kokkos::View<EntityId*, mem_space>;
-    EntityIdView send_ids_kokkos("DTK:CoarseGlobalSearch::search::send_ids_kokkos", send_ids.size());
-    //IKT, 2/21/2022: copy send_ids into send_ids_kokkos.  Ideally we'd want to create send_ids_kokkos
-    //from the get-go but punting on this for now
-    for (int i = 0; i < send_ids.size(); ++i) {
-      send_ids_kokkos(i) = send_ids[i];
-    }
+    const Teuchos::ArrayView<const EntityId> send_ids_view = send_ids();
+    using EntityIdView                    = Kokkos::View<EntityId*, Kokkos::HostSpace>;
+    EntityIdView send_ids_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(send_ids()); 
     range_entity_ids.resize( num_range_import );
-    EntityIdView range_entity_ids_kokkos("DTK:CoarseGlobalSearch::search::range_entity_ids_kokkos", num_range_import);
-    distributor.doPostsAndWaits( send_ids_kokkos, 1, range_entity_ids_kokkos );
-    //IKT, 2/21/2022: copy range_entity_ids_kokkos back into range_entity_ids for output.
-    for (int i = 0; i < num_range_import; ++i) {
-      range_entity_ids[i] = range_entity_ids_kokkos(i);
-    }
+    EntityIdView range_entity_ids_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(range_entity_ids()); 
+    //distributor.doPostsAndWaits( send_ids_view, 1, range_entity_ids() );
+    distributor.doPostsAndWaits( send_ids_goview, 1, range_entity_ids_goview );
 
     // Redistribute the range entity owner ranks.
-    using IntView = Kokkos::View<int*, mem_space>;
-    IntView range_ranks_kokkos("DTK:CoarseGlobalSearch::search::range_ranks_kokkos", range_ranks.size());
-    //IKT, 2/21/2022: copy range_ranks into range_ranks_kokkos.  Ideally we'd want to create range_ranks_kokkos
-    //from the get-go but punting on this for now
-    for (int i = 0; i < range_ranks.size(); ++i) {
-      range_ranks_kokkos(i) = range_ranks[i];
-    }
+    Teuchos::ArrayView<const int> range_ranks_view = range_ranks();
+    using ConstIntView                    = Kokkos::View<const int*, Kokkos::HostSpace>;
+    ConstIntView range_ranks_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(range_ranks()); 
     range_owner_ranks.resize( num_range_import );
-    IntView range_owner_ranks_kokkos("DTK:CoarseGlobalSearch::search::range_owner_ranks_kokkos", num_range_import);
-    distributor.doPostsAndWaits( range_ranks_kokkos, 1, range_owner_ranks_kokkos );
-    //IKT, 2/21/2022: copy range_owner_ranks_kokkos back into range_owner_ranks for output.
-    for (int i = 0; i < num_range_import; ++i) {
-      range_owner_ranks[i] = range_owner_ranks_kokkos(i);
-    }
+    using IntView                    = Kokkos::View<int*, Kokkos::HostSpace>;
+    IntView range_owner_ranks_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(range_owner_ranks()); 
+    //distributor.doPostsAndWaits( range_ranks_view, 1, range_owner_ranks() );
+    distributor.doPostsAndWaits( range_ranks_goview, 1, range_owner_ranks_goview );
 
-    using DoubleView = Kokkos::View<double*, mem_space>;
-    DoubleView send_centroids_kokkos("DTK:CoarseGlobalSearch::search::send_centroids_kokkos", send_centroids.size());
-    //IKT, 2/21/2022: copy send_centroids into send_centroids_kokkos.  Ideally we'd want to create send_centroids_kokkos
-    //from the get-go but punting on this for now
-    for (int i = 0; i < send_centroids.size(); ++i) {
-      send_centroids_kokkos(i) = send_centroids[i];
-    }
     // Redistribute the range entity centroids.
     range_centroids.resize( d_space_dim * num_range_import );
-    DoubleView range_centroids_kokkos("DTK:CoarseGlobalSearch::search::range_centroids_kokkos", d_space_dim * num_range_import);
-    distributor.doPostsAndWaits( send_centroids_kokkos, d_space_dim,
-                                 range_centroids_kokkos );
-    //IKT, 2/21/2022: copy send_centroids_kokkos back into send_centroids for output.
-    for (int i = 0; i < d_space_dim * num_range_import; ++i) {
-      range_centroids[i] = range_centroids_kokkos(i);
-    }
+    Teuchos::ArrayView<const double> send_centroids_view = send_centroids();
+    using ConstDoubleView                = Kokkos::View<const double*, Kokkos::HostSpace>;
+    using DoubleView                     = Kokkos::View<double*, Kokkos::HostSpace>;
+    ConstDoubleView send_centroids_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(send_centroids()); 
+    DoubleView range_centroids_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(range_centroids()); 
+    //distributor.doPostsAndWaits( send_centroids_view, d_space_dim,
+    //                             range_centroids() );
+    distributor.doPostsAndWaits( send_centroids_goview, d_space_dim,
+                                 range_centroids_goview );
 }
 
 //---------------------------------------------------------------------------//

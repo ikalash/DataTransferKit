@@ -43,12 +43,6 @@
 
 #include <Tpetra_Distributor.hpp>
 
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-#include "Kokkos_DefaultNode.hpp"
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> NodeType;
-using device_t = typename NodeType::device_type;
-using mem_space = typename device_t::memory_space;
-
 namespace DataTransferKit
 {
 //---------------------------------------------------------------------------//
@@ -211,20 +205,14 @@ void ParallelSearch::search(
     Tpetra::Distributor domain_to_range_dist( d_comm );
     int num_import =
         domain_to_range_dist.createFromSends( export_range_ranks() );
-    using EntityIdView = Kokkos::View<EntityId*, mem_space>;
-    EntityIdView export_data_kokkos("DTK:ParallelSearch::search::export_data_kokkos", export_data.size());
-    //IKT, 2/21/2022: export_data into export_data_kokkos.  Ideally we'd want to create export_data_kokkos
-    //from the get-go but punting on this for now
-    for (int i = 0; i < export_data.size(); ++i) {
-      export_data_kokkos(i) = export_data[i];
-    }
     Teuchos::Array<EntityId> domain_data( 3 * num_import );
-    EntityIdView domain_data_kokkos("DTK:ParallelSearch::search::domain_data_kokkos", 3 * num_import);
-    domain_to_range_dist.doPostsAndWaits( export_data_kokkos, 3, domain_data_kokkos );
-    //IKT, 2/21/2022: copy domain_data_kokkos back into domain_data for output.
-    for (int i = 0; i < 3 * num_import; ++i) {
-      domain_data[i] = domain_data_kokkos(i);
-    }
+    Teuchos::ArrayView<const EntityId> export_data_view = export_data();
+    using ConstEntityIdView                = Kokkos::View<const EntityId*, Kokkos::HostSpace>;
+    ConstEntityIdView export_data_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(export_data()); 
+    using EntityIdView                = Kokkos::View<EntityId*, Kokkos::HostSpace>;
+    EntityIdView domain_data_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(domain_data()); 
+    //domain_to_range_dist.doPostsAndWaits( export_data_view, 3, domain_data() );
+    domain_to_range_dist.doPostsAndWaits( export_data_goview, 3, domain_data_goview );
 
     // Store the domain data in the range parallel decomposition.
     for ( int i = 0; i < num_import; ++i )
@@ -246,35 +234,22 @@ void ParallelSearch::search(
         Teuchos::Array<EntityId> import_missed( num_import_missed );
         Teuchos::ArrayView<const EntityId> missed_view =
             missed_range_entity_ids();
-        EntityIdView missed_kokkos("DTK:ParallelSearch::search::missed_kokkos", missed_range_entity_ids.size());
-        //IKT, 2/21/2022: missed_range_entity_ids into missed_kokkos.  Ideally we'd want to create missed_kokkos
-        //from the get-go but punting on this for now
-        for (int i = 0; i < missed_range_entity_ids.size(); ++i) {
-          missed_kokkos(i) = missed_range_entity_ids[i];
-        }
-        EntityIdView import_missed_kokkos("DTK:ParallelSearch::search::import_missed_kokkos", num_import_missed);
-        missed_range_dist.doPostsAndWaits( missed_kokkos, 1, import_missed_kokkos );
-        //IKT, 2/21/2022: copy import_missed_kokkos back into import_missed for output.
-        for (int i = 0; i < num_import_missed; ++i) {
-          import_missed[i] = import_missed_kokkos(i);
-        }
+        ConstEntityIdView missed_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(missed_range_entity_ids()); 
+        EntityIdView import_missed_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(import_missed()); 
+        //missed_range_dist.doPostsAndWaits( missed_view, 1, import_missed() );
+        missed_range_dist.doPostsAndWaits( missed_goview, 1, import_missed_goview );
 
         // Back-communicate the found entities.
         Tpetra::Distributor found_range_dist( d_comm );
         int num_import_found =
             found_range_dist.createFromSends( found_range_ranks() );
         Teuchos::Array<EntityId> import_found( num_import_found );
-        EntityIdView found_kokkos("DTK:ParallelSearch::search::found_kokkos", found_range_entity_ids.size());
-        //IKT, 2/21/2022: found_range_entity_ids into found_kokkos.  Ideally we'd want to create found_kokkos from the get-go, but punting on this for now
-        for (int i = 0; i < found_range_entity_ids.size(); ++i) {
-          found_kokkos(i) = found_range_entity_ids[i];
-        }
-        EntityIdView import_found_kokkos("DTK:ParallelSearch::search::import_found_kokkos", num_import_found);
-        found_range_dist.doPostsAndWaits( found_kokkos, 1, import_found_kokkos );
-        //IKT, 2/21/2022: copy import_found_kokkos back into import_found for output.
-        for (int i = 0; i < num_import_found; ++i) {
-          import_found[i] = import_found_kokkos(i);
-        }
+        Teuchos::ArrayView<const EntityId> found_view =
+            found_range_entity_ids();
+        ConstEntityIdView found_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(found_range_entity_ids()); 
+        EntityIdView import_found_goview = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(import_found()); 
+        //found_range_dist.doPostsAndWaits( found_view, 1, import_found() );
+        found_range_dist.doPostsAndWaits( found_goview, 1, import_found_goview );
 
         // Create a unique list of missed entities.
         std::sort( import_missed.begin(), import_missed.end() );

@@ -62,12 +62,7 @@ TRIBITS_PACKAGE_POSTPROCESS()
 
 SET(VALID_TPETRA_TYPE FALSE)
 IF (Tpetra_INST_INT_LONG_LONG)
-	#TRIBITS_ADD_ETI_INSTANTIATIONS(TpetraCore
-	#"S={double} LO={int} GO={long long} N={Kokkos::Compat::KokkosSerialWrapperNode}"
-	#)
-  TRIBITS_ADD_ETI_INSTANTIATIONS(TpetraCore
-	  "S={double} LO={int} GO={long long} N={Tpetra::KokkosCompat::KokkosSerialWrapperNode}"
-  )
+  TRIBITS_ADD_ETI_INSTANTIATIONS(TpetraCore "S={double} LO={int} GO={long long} N={Tpetra::KokkosCompat::KokkosSerialWrapperNode}")
   SET(VALID_TPETRA_TYPE TRUE)
   message("-- Setting GO=long long in DTK")
 ENDIF()

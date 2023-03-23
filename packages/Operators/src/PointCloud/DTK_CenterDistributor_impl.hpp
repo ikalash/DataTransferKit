@@ -49,11 +49,9 @@
 
 #include "DTK_DBC.hpp"
 
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-#include "Kokkos_DefaultNode.hpp"
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> NodeType;
-using device_t = typename NodeType::device_type;
-using mem_space = typename device_t::memory_space;
+#include "Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+using mem_space = Kokkos::DefaultExecutionSpace;
+typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<mem_space>  KokkosNode;
 
 namespace DataTransferKit
 {

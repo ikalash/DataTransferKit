@@ -112,7 +112,6 @@ class STKMeshHelpers
      * field container ordered by canonical node order (C,N,D). Templated
      * extraction layer.
      */
-    template <class FieldType>
     static Intrepid::FieldContainer<double> extractEntityNodeCoordinates(
         const Teuchos::Array<stk::mesh::Entity> &stk_entities,
         const stk::mesh::BulkData &bulk_data, const int space_dim );
@@ -121,12 +120,6 @@ class STKMeshHelpers
 //---------------------------------------------------------------------------//
 
 } // end namespace DataTransferKit
-
-//---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
-
-#include "DTK_STKMeshHelpers_impl.hpp"
 
 //---------------------------------------------------------------------------//
 

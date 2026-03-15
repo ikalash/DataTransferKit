@@ -46,7 +46,6 @@
 
 #include <Intrepid_FieldContainer.hpp>
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/MetaData.hpp>

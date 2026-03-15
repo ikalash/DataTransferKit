@@ -58,7 +58,6 @@
 #include <Tpetra_Vector.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -91,17 +90,17 @@ TEUCHOS_UNIT_TEST( STKMeshField, pull_push_test )
     stk::mesh::Part &part_2 = meta_data.declare_part( p2_name );
 
     // Make a data field.
-    stk::mesh::Field<double, stk::mesh::Cartesian3d> &data_field_1 =
+    stk::mesh::Field<double> &data_field_1 =
         meta_data
-            .declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
+            .declare_field<double>(
                 stk::topology::NODE_RANK, "test field 1" );
     meta_data.set_coordinate_field( &data_field_1 );
     stk::mesh::put_field_on_mesh( data_field_1, part_1, static_cast<double*>( nullptr ) );
 
     // Make an empty data field.
-    stk::mesh::Field<double, stk::mesh::Cartesian3d> &data_field_2 =
+    stk::mesh::Field<double> &data_field_2 =
         meta_data
-            .declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
+            .declare_field<double>(
                 stk::topology::NODE_RANK, "test field 2" );
     meta_data.set_coordinate_field( &data_field_2 );
     stk::mesh::put_field_on_mesh( data_field_2, part_2, static_cast<double*>( nullptr ) );
@@ -132,9 +131,9 @@ TEUCHOS_UNIT_TEST( STKMeshField, pull_push_test )
     bulk_data->modification_end();
 
     // Create a nodal field.
-    stk::mesh::Field<double, stk::mesh::Cartesian3d> *test_field_1 =
+    stk::mesh::Field<double> *test_field_1 =
         bulk_data->mesh_meta_data()
-            .get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
+            .get_field<double>(
                 stk::topology::NODE_RANK, "test field 1" );
     for ( stk::mesh::Entity node : nodes )
     {
@@ -149,7 +148,7 @@ TEUCHOS_UNIT_TEST( STKMeshField, pull_push_test )
 
     // Create a vector from the nodal field.
     auto field_vec_1 = manager.createFieldMultiVector<
-        stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
+        stk::mesh::Field<double>>(
         Teuchos::ptr( test_field_1 ), 3 );
 
     // Test the vector allocation.
@@ -190,13 +189,13 @@ TEUCHOS_UNIT_TEST( STKMeshField, pull_push_test )
     }
 
     // Now make an empty field vector.
-    stk::mesh::Field<double, stk::mesh::Cartesian3d> *test_field_2 =
+    stk::mesh::Field<double> *test_field_2 =
         bulk_data->mesh_meta_data()
-            .get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
+            .get_field<double>(
                 stk::topology::NODE_RANK, "test field 2" );
 
     auto field_vec_2 = manager.createFieldMultiVector<
-        stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
+        stk::mesh::Field<double>>(
         Teuchos::ptr( test_field_2 ), 3 );
 
     // Test the vector to make sure it is empty.

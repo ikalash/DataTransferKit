@@ -165,7 +165,7 @@ int main( int argc, char *argv[] )
 
     // Add a nodal field to the source part.
     stk::mesh::Field<double> &source_field =
-        src_broker.meta_data().declare_field<stk::mesh::Field<double>>(
+        src_broker.meta_data().declare_field<double>(
             stk::topology::NODE_RANK, "u_src" );
     stk::mesh::Part *src_part =
         src_broker.meta_data().get_part( source_mesh_part_name );
@@ -173,7 +173,7 @@ int main( int argc, char *argv[] )
 
     // Add an error nodal field to the source part.
     stk::mesh::Field<double> &source_error_field =
-        src_broker.meta_data().declare_field<stk::mesh::Field<double>>(
+        src_broker.meta_data().declare_field<double>(
             stk::topology::NODE_RANK, "u_err" );
     stk::mesh::put_field_on_mesh( source_error_field, *src_part, static_cast<double*>( nullptr ) );
 
@@ -217,7 +217,7 @@ int main( int argc, char *argv[] )
 
     // Add a nodal field to the target part.
     stk::mesh::Field<double> &target_field =
-        tgt_broker.meta_data().declare_field<stk::mesh::Field<double>>(
+        tgt_broker.meta_data().declare_field<double>(
             stk::topology::NODE_RANK, "u_tgt" );
     stk::mesh::Part *tgt_part =
         tgt_broker.meta_data().get_part( target_mesh_part_name );
@@ -225,7 +225,7 @@ int main( int argc, char *argv[] )
 
     // Add an error nodal field to the target part.
     stk::mesh::Field<double> &target_error_field =
-        tgt_broker.meta_data().declare_field<stk::mesh::Field<double>>(
+        tgt_broker.meta_data().declare_field<double>(
             stk::topology::NODE_RANK, "u_err" );
     stk::mesh::put_field_on_mesh( target_error_field, *tgt_part, static_cast<double*>( nullptr ) );
 

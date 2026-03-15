@@ -61,7 +61,6 @@
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -103,9 +102,9 @@ TEUCHOS_UNIT_TEST( STKMeshEntity, hex_8_test )
     stk::mesh::set_topology( part_1, stk::topology::HEX_8 );
 
     // Make a coordinate field.
-    stk::mesh::Field<double, stk::mesh::Cartesian3d> &coord_field =
+    stk::mesh::Field<double> &coord_field =
         meta_data
-            .declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
+            .declare_field<double>(
                 stk::topology::NODE_RANK, "coordinates" );
     meta_data.set_coordinate_field( &coord_field );
     stk::mesh::put_field_on_mesh( coord_field, part_1, static_cast<double*>( nullptr ) );

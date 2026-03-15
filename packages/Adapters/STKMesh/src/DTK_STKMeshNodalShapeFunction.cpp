@@ -44,6 +44,8 @@
 
 #include <Shards_CellTopology.hpp>
 
+#include <stk_mesh/base/MetaData.hpp>
+
 namespace DataTransferKit
 {
 //---------------------------------------------------------------------------//

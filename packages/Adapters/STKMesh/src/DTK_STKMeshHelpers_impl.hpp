@@ -56,7 +56,6 @@ namespace DataTransferKit
 //---------------------------------------------------------------------------//
 // Extract the coordinates of multiple entities and return an array ordered as
 // (C,N,D).
-template <class FieldType>
 Intrepid::FieldContainer<double> STKMeshHelpers::extractEntityNodeCoordinates(
     const Teuchos::Array<stk::mesh::Entity> &stk_entities,
     const stk::mesh::BulkData &bulk_data, const int space_dim )
@@ -64,8 +63,8 @@ Intrepid::FieldContainer<double> STKMeshHelpers::extractEntityNodeCoordinates(
     // Cast the field.
     const stk::mesh::FieldBase *coord_field_base =
         bulk_data.mesh_meta_data().coordinate_field();
-    const stk::mesh::Field<double, FieldType> *coord_field =
-        dynamic_cast<const stk::mesh::Field<double, FieldType> *>(
+    const stk::mesh::Field<double> *coord_field =
+        dynamic_cast<const stk::mesh::Field<double> *>(
             coord_field_base );
 
     // Allocate the coordinate array.

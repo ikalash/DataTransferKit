@@ -72,7 +72,6 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/GetEntities.hpp>

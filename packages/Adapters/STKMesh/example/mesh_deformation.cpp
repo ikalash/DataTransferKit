@@ -72,7 +72,6 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -133,8 +132,8 @@ void setBoundaryDisplacement( stk::mesh::BulkData &bulk_data,
     // Get the coordinate field.
     const stk::mesh::FieldBase *coord_data_base =
         bulk_data.mesh_meta_data().coordinate_field();
-    const stk::mesh::Field<double, stk::mesh::Cartesian3d> *coord_data =
-        dynamic_cast<const stk::mesh::Field<double, stk::mesh::Cartesian3d> *>(
+    const stk::mesh::Field<double> *coord_data =
+        dynamic_cast<const stk::mesh::Field<double> *>(
             coord_data_base );
     double *coords;
 
@@ -223,8 +222,8 @@ void deformMesh( stk::mesh::BulkData &bulk_data,
     // Get the coordinate field.
     const stk::mesh::FieldBase *coord_field_base =
         bulk_data.mesh_meta_data().coordinate_field();
-    const stk::mesh::Field<double, stk::mesh::Cartesian3d> *coord_field =
-        dynamic_cast<const stk::mesh::Field<double, stk::mesh::Cartesian3d> *>(
+    const stk::mesh::Field<double> *coord_field =
+        dynamic_cast<const stk::mesh::Field<double> *>(
             coord_field_base );
     double *coords;
 

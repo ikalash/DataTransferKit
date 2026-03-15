@@ -74,7 +74,6 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -156,7 +155,7 @@ int main( int argc, char *argv[] )
 
     // Add a nodal field to the source part.
     stk::mesh::Field<double> &source_field =
-        src_fixture.m_meta.declare_field<stk::mesh::Field<double>>(
+        src_fixture.m_meta.declare_field<double>(
             stk::topology::NODE_RANK, "u_src" );
     stk::mesh::Part &src_part = src_fixture.m_meta.universal_part();
     stk::mesh::put_field_on_mesh( source_field, src_part, static_cast<double*>( nullptr ) );
@@ -204,13 +203,13 @@ int main( int argc, char *argv[] )
 
     // Add a nodal field to the target part.
     stk::mesh::Field<double> &target_field =
-        tgt_fixture.m_meta.declare_field<stk::mesh::Field<double>>(
+        tgt_fixture.m_meta.declare_field<double>(
             stk::topology::NODE_RANK, "u_tgt" );
     stk::mesh::put_field_on_mesh( target_field, tgt_part, static_cast<double*>( nullptr ) );
 
     // Add an error nodal field to the target part.
     stk::mesh::Field<double> &target_error_field =
-        tgt_fixture.m_meta.declare_field<stk::mesh::Field<double>>(
+        tgt_fixture.m_meta.declare_field<double>(
             stk::topology::NODE_RANK, "u_err" );
     stk::mesh::put_field_on_mesh( target_error_field, tgt_part, static_cast<double*>( nullptr ) );
 

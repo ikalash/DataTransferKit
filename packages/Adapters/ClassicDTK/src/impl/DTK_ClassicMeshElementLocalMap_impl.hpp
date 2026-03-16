@@ -47,7 +47,7 @@
 
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 namespace DataTransferKit
 {
@@ -86,7 +86,7 @@ double ClassicMeshElementLocalMap<Mesh>::measure( const Entity &entity ) const
     shards::CellTopology entity_topo = d_mesh->getBlockTopology( block_id );
 
     // Get the entity coordinates.
-    Intrepid::FieldContainer<double> entity_coords =
+    Kokkos::DynRankView<double, Kokkos::HostSpace> entity_coords =
         d_mesh->getElementNodeCoordinates( entity.id(), block_id );
 
     // Compute the measure.
@@ -106,7 +106,7 @@ void ClassicMeshElementLocalMap<Mesh>::centroid(
     shards::CellTopology entity_topo = d_mesh->getBlockTopology( block_id );
 
     // Get the entity coordinates.
-    Intrepid::FieldContainer<double> entity_coords =
+    Kokkos::DynRankView<double, Kokkos::HostSpace> entity_coords =
         d_mesh->getElementNodeCoordinates( entity.id(), block_id );
 
     // Compute the centroid of the element.
@@ -141,7 +141,7 @@ bool ClassicMeshElementLocalMap<Mesh>::mapToReferenceFrame(
     shards::CellTopology entity_topo = d_mesh->getBlockTopology( block_id );
 
     // Get the entity coordinates.
-    Intrepid::FieldContainer<double> entity_coords =
+    Kokkos::DynRankView<double, Kokkos::HostSpace> entity_coords =
         d_mesh->getElementNodeCoordinates( entity.id(), block_id );
 
     // Use the cell to perform the element mapping.
@@ -163,7 +163,7 @@ bool ClassicMeshElementLocalMap<Mesh>::checkPointInclusion(
     shards::CellTopology entity_topo = d_mesh->getBlockTopology( block_id );
 
     // Get the entity coordinates.
-    Intrepid::FieldContainer<double> entity_coords =
+    Kokkos::DynRankView<double, Kokkos::HostSpace> entity_coords =
         d_mesh->getElementNodeCoordinates( entity.id(), block_id );
 
     // Check point inclusion in the element.
@@ -186,7 +186,7 @@ void ClassicMeshElementLocalMap<Mesh>::mapToPhysicalFrame(
     shards::CellTopology entity_topo = d_mesh->getBlockTopology( block_id );
 
     // Get the entity coordinates.
-    Intrepid::FieldContainer<double> entity_coords =
+    Kokkos::DynRankView<double, Kokkos::HostSpace> entity_coords =
         d_mesh->getElementNodeCoordinates( entity.id(), block_id );
 
     // Map from the element.

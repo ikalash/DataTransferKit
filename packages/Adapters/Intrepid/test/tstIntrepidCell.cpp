@@ -52,7 +52,8 @@
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
+#include <cstring>
 
 #include "DTK_IntrepidCell.hpp"
 #include "DTK_IntrepidSideCell.hpp"
@@ -178,13 +179,13 @@ TEUCHOS_UNIT_TEST( IntrepidCell, element_all_cells_test )
     coord_dims[0] = workset_size;
     coord_dims[1] = num_nodes;
     coord_dims[2] = dimension;
-    Intrepid::FieldContainer<double> element_coords( coord_dims,
-                                                     element_coordinates() );
-    Intrepid::FieldContainer<double> cell_measure( workset_size );
-    Intrepid::FieldContainer<double> ip_coords;
-    Intrepid::FieldContainer<double> param_coords( 1, dimension );
-    param_coords.initialize( 0.0 );
-    Intrepid::FieldContainer<double> physical_coords( workset_size, 1,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> element_coords( "element_coords", workset_size, num_nodes, dimension );
+    std::memcpy( element_coords.data(), element_coordinates.getRawPtr(), workset_size * num_nodes * dimension * sizeof(double) );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> cell_measure( "cell_measure", workset_size );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> ip_coords;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> param_coords( "param_coords", 1, dimension );
+    Kokkos::deep_copy(param_coords, 0.0);
+    Kokkos::DynRankView<double, Kokkos::HostSpace> physical_coords( "physical_coords", workset_size, 1,
                                                       dimension );
 
     intrepid_cell.allocateCellState( element_coords );
@@ -200,7 +201,7 @@ TEUCHOS_UNIT_TEST( IntrepidCell, element_all_cells_test )
 
     for ( int cell = 0; cell < num_elements; ++cell )
     {
-        for ( int ip = 0; ip < ip_coords.dimension( 1 ); ++ip )
+        for ( int ip = 0; ip < ip_coords.extent_int( 1 ); ++ip )
         {
             TEST_EQUALITY( ip_coords( cell, ip, 0 ), 1.0 * ( cell ) + 0.5 );
             TEST_EQUALITY( ip_coords( cell, ip, 1 ), 1.0 );
@@ -247,20 +248,19 @@ TEUCHOS_UNIT_TEST( IntrepidCell, element_single_cell_test )
     coord_dims[0] = workset_size;
     coord_dims[1] = num_nodes;
     coord_dims[2] = dimension;
-    Intrepid::FieldContainer<double> cell_measure( workset_size );
-    Intrepid::FieldContainer<double> ip_coords;
-    Intrepid::FieldContainer<double> param_coords( 1, dimension );
-    param_coords.initialize( 0.0 );
-    Intrepid::FieldContainer<double> physical_coords( workset_size, 1,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> cell_measure( "cell_measure", workset_size );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> ip_coords;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> param_coords( "param_coords", 1, dimension );
+    Kokkos::deep_copy(param_coords, 0.0);
+    Kokkos::DynRankView<double, Kokkos::HostSpace> physical_coords( "physical_coords", workset_size, 1,
                                                       dimension );
-    Intrepid::FieldContainer<double> map2ref_coords( 1, dimension );
-    Intrepid::FieldContainer<double> mapped_coords( 1, dimension );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> map2ref_coords( "map2ref_coords", 1, dimension );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> mapped_coords( "mapped_coords", 1, dimension );
 
     for ( int cell = 0; cell < num_elements; ++cell )
     {
-        Intrepid::FieldContainer<double> element_coords(
-            coord_dims, element_coordinates( num_nodes * cell * dimension,
-                                             dimension * num_nodes ) );
+        Kokkos::DynRankView<double, Kokkos::HostSpace> element_coords( "element_coords", workset_size, num_nodes, dimension );
+        std::memcpy( element_coords.data(), &element_coordinates[num_nodes * cell * dimension], dimension * num_nodes * sizeof(double) );
         intrepid_cell.allocateCellState( element_coords );
         intrepid_cell.updateCellState();
 
@@ -275,7 +275,7 @@ TEUCHOS_UNIT_TEST( IntrepidCell, element_single_cell_test )
 
         intrepid_cell.getCellMeasures( cell_measure );
         intrepid_cell.getPhysicalIntegrationCoordinates( ip_coords );
-        for ( int ip = 0; ip < ip_coords.dimension( 1 ); ++ip )
+        for ( int ip = 0; ip < ip_coords.extent_int( 1 ); ++ip )
         {
             TEST_EQUALITY( ip_coords( 0, ip, 0 ), 1.0 * ( cell ) + 0.5 );
             TEST_EQUALITY( ip_coords( 0, ip, 1 ), 1.0 );
@@ -285,7 +285,7 @@ TEUCHOS_UNIT_TEST( IntrepidCell, element_single_cell_test )
         map2ref_coords( 0, 0 ) = 1.0 * cell + 0.5;
         map2ref_coords( 0, 1 ) = 0.5;
         map2ref_coords( 0, 2 ) = 0.5;
-        mapped_coords.initialize( 1.0 );
+        Kokkos::deep_copy(mapped_coords, 1.0);
         intrepid_cell.mapToCellReferenceFrame( map2ref_coords, mapped_coords );
         TEST_EQUALITY( mapped_coords( 0, 0 ), 0.0 );
         TEST_EQUALITY( mapped_coords( 0, 1 ), -0.5 );
@@ -329,13 +329,13 @@ TEUCHOS_UNIT_TEST( IntrepidCell, side_all_cells_test )
     coord_dims[0] = workset_size;
     coord_dims[1] = num_nodes;
     coord_dims[2] = dimension;
-    Intrepid::FieldContainer<double> element_coords( coord_dims,
-                                                     element_coordinates() );
-    Intrepid::FieldContainer<double> cell_measure( workset_size );
-    Intrepid::FieldContainer<double> ip_coords;
-    Intrepid::FieldContainer<double> param_coords( 1, dimension - 1 );
-    param_coords.initialize( 0.0 );
-    Intrepid::FieldContainer<double> physical_coords( workset_size, 1,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> element_coords( "element_coords", workset_size, num_nodes, dimension );
+    std::memcpy( element_coords.data(), element_coordinates.getRawPtr(), workset_size * num_nodes * dimension * sizeof(double) );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> cell_measure( "cell_measure", workset_size );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> ip_coords;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> param_coords( "param_coords", 1, dimension - 1 );
+    Kokkos::deep_copy(param_coords, 0.0);
+    Kokkos::DynRankView<double, Kokkos::HostSpace> physical_coords( "physical_coords", workset_size, 1,
                                                       dimension );
 
     intrepid_cell.allocateCellState( element_coords );
@@ -351,7 +351,7 @@ TEUCHOS_UNIT_TEST( IntrepidCell, side_all_cells_test )
 
     for ( int cell = 0; cell < num_elements; ++cell )
     {
-        for ( int ip = 0; ip < ip_coords.dimension( 1 ); ++ip )
+        for ( int ip = 0; ip < ip_coords.extent_int( 1 ); ++ip )
         {
             TEST_EQUALITY( ip_coords( cell, ip, 0 ), 1.0 * ( cell ) + 0.5 );
             TEST_EQUALITY( ip_coords( cell, ip, 1 ), 0.0 );
@@ -400,18 +400,17 @@ TEUCHOS_UNIT_TEST( IntrepidCell, side_single_cell_test )
     coord_dims[0] = workset_size;
     coord_dims[1] = num_nodes;
     coord_dims[2] = dimension;
-    Intrepid::FieldContainer<double> cell_measure( workset_size );
-    Intrepid::FieldContainer<double> ip_coords;
-    Intrepid::FieldContainer<double> param_coords( 1, dimension - 1 );
-    param_coords.initialize( 0.0 );
-    Intrepid::FieldContainer<double> physical_coords( workset_size, 1,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> cell_measure( "cell_measure", workset_size );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> ip_coords;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> param_coords( "param_coords", 1, dimension - 1 );
+    Kokkos::deep_copy(param_coords, 0.0);
+    Kokkos::DynRankView<double, Kokkos::HostSpace> physical_coords( "physical_coords", workset_size, 1,
                                                       dimension );
 
     for ( int cell = 0; cell < num_elements; ++cell )
     {
-        Intrepid::FieldContainer<double> element_coords(
-            coord_dims, element_coordinates( num_nodes * cell * dimension,
-                                             dimension * num_nodes ) );
+        Kokkos::DynRankView<double, Kokkos::HostSpace> element_coords( "element_coords", workset_size, num_nodes, dimension );
+        std::memcpy( element_coords.data(), &element_coordinates[num_nodes * cell * dimension], dimension * num_nodes * sizeof(double) );
         intrepid_cell.allocateCellState( element_coords );
         intrepid_cell.updateCellState();
 
@@ -426,7 +425,7 @@ TEUCHOS_UNIT_TEST( IntrepidCell, side_single_cell_test )
 
         intrepid_cell.getCellMeasures( cell_measure );
         intrepid_cell.getPhysicalIntegrationCoordinates( ip_coords );
-        for ( int ip = 0; ip < ip_coords.dimension( 1 ); ++ip )
+        for ( int ip = 0; ip < ip_coords.extent_int( 1 ); ++ip )
         {
             TEST_EQUALITY( ip_coords( 0, ip, 0 ), 1.0 * ( cell ) + 0.5 );
             TEST_EQUALITY( ip_coords( 0, ip, 1 ), 0.0 );
@@ -468,10 +467,10 @@ TEUCHOS_UNIT_TEST( IntrepidCell, element_ffupdate_all_cells_test )
     coord_dims[0] = workset_size;
     coord_dims[1] = num_nodes;
     coord_dims[2] = dimension;
-    Intrepid::FieldContainer<double> element_coords( coord_dims,
-                                                     element_coordinates() );
-    Intrepid::FieldContainer<double> cell_measure( workset_size );
-    Intrepid::FieldContainer<double> ip_coords;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> element_coords( "element_coords", workset_size, num_nodes, dimension );
+    std::memcpy( element_coords.data(), element_coordinates.getRawPtr(), workset_size * num_nodes * dimension * sizeof(double) );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> cell_measure( "cell_measure", workset_size );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> ip_coords;
 
     DataTransferKit::IntrepidCell::updateState( intrepid_cell, element_coords );
 
@@ -484,7 +483,7 @@ TEUCHOS_UNIT_TEST( IntrepidCell, element_ffupdate_all_cells_test )
 
     for ( int cell = 0; cell < num_elements; ++cell )
     {
-        for ( int ip = 0; ip < ip_coords.dimension( 1 ); ++ip )
+        for ( int ip = 0; ip < ip_coords.extent_int( 1 ); ++ip )
         {
             TEST_EQUALITY( ip_coords( cell, ip, 0 ), 1.0 * ( cell ) + 0.5 );
             TEST_EQUALITY( ip_coords( cell, ip, 1 ), 1.0 );
@@ -529,10 +528,10 @@ TEUCHOS_UNIT_TEST( IntrepidCell, side_ffupdate_all_cells_test )
     coord_dims[0] = workset_size;
     coord_dims[1] = num_nodes;
     coord_dims[2] = dimension;
-    Intrepid::FieldContainer<double> element_coords( coord_dims,
-                                                     element_coordinates() );
-    Intrepid::FieldContainer<double> cell_measure( workset_size );
-    Intrepid::FieldContainer<double> ip_coords;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> element_coords( "element_coords", workset_size, num_nodes, dimension );
+    std::memcpy( element_coords.data(), element_coordinates.getRawPtr(), workset_size * num_nodes * dimension * sizeof(double) );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> cell_measure( "cell_measure", workset_size );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> ip_coords;
 
     DataTransferKit::IntrepidCell::updateState( intrepid_cell, element_coords );
 
@@ -545,7 +544,7 @@ TEUCHOS_UNIT_TEST( IntrepidCell, side_ffupdate_all_cells_test )
 
     for ( int cell = 0; cell < num_elements; ++cell )
     {
-        for ( int ip = 0; ip < ip_coords.dimension( 1 ); ++ip )
+        for ( int ip = 0; ip < ip_coords.extent_int( 1 ); ++ip )
         {
             TEST_EQUALITY( ip_coords( cell, ip, 0 ), 1.0 * ( cell ) + 0.5 );
             TEST_EQUALITY( ip_coords( cell, ip, 1 ), 0.0 );
@@ -576,7 +575,7 @@ TEUCHOS_UNIT_TEST( IntrepidCell, point_in_hex_test )
         shards::getCellTopologyData<shards::Hexahedron<8>>();
 
     // Perform point in element checks.
-    Intrepid::FieldContainer<double> point( 1, dimension );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> point( "point", 1, dimension );
     point( 0, 0 ) = 2.59;
     point( 0, 1 ) = 0.54;
     point( 0, 2 ) = 0.32;
@@ -588,9 +587,8 @@ TEUCHOS_UNIT_TEST( IntrepidCell, point_in_hex_test )
     bool point_in_element = false;
     for ( int elem_id = 0; elem_id < num_elements; ++elem_id )
     {
-        Intrepid::FieldContainer<double> element_nodes(
-            coord_dims,
-            element_coordinates( 8 * dimension * elem_id, dimension * 8 ) );
+        Kokkos::DynRankView<double, Kokkos::HostSpace> element_nodes( "element_nodes", workset_size, num_nodes, dimension );
+        std::memcpy( element_nodes.data(), &element_coordinates[8 * dimension * elem_id], dimension * 8 * sizeof(double) );
         hex_cell.allocateCellState( element_nodes );
         point_in_element = hex_cell.pointInPhysicalCell( point, 1.0e-8 );
 

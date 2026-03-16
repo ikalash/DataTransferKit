@@ -96,7 +96,7 @@ double integrateField( DataTransferKit::UnitTest::ReferenceHexMesh &mesh,
 
     // Import the field to a ghosted decomposition so we have access to node
     // DOFs that are not locally owned.
-    auto ghosted_field = mesh.ghostedNodalField( field.dimension() );
+    auto ghosted_field = mesh.ghostedNodalField( field.extent_int() );
     Teuchos::RCP<DataTransferKit::FieldMultiVector> vector =
         Teuchos::rcp( new DataTransferKit::FieldMultiVector(
             comm, Teuchos::rcpFromRef( field ) ) );

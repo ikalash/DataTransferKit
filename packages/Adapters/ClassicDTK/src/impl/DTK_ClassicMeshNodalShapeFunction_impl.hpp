@@ -81,27 +81,32 @@ void ClassicMeshNodalShapeFunction<Mesh>::evaluateValue(
     Teuchos::Array<double> &values ) const
 {
     // Get the basis for the entity.
-    Teuchos::RCP<Intrepid::Basis<double, Intrepid::FieldContainer<double>>>
+    Teuchos::RCP<Intrepid2::Basis<Kokkos::HostSpace, double, double>>
         basis = getIntrepidBasis( entity );
 
     // Wrap the reference point.
-    Teuchos::Array<int> point_dims( 2 );
-    point_dims[0] = 1;
-    point_dims[1] = reference_point.size();
-    Intrepid::FieldContainer<double> point_container(
-        point_dims, const_cast<double *>( reference_point.getRawPtr() ) );
-
-    // Wrap the evaluations.
-    values.resize( basis->getCardinality() );
-    Teuchos::Array<int> value_dims( 2 );
-    value_dims[0] = basis->getCardinality();
-    value_dims[1] = 1;
-    Intrepid::FieldContainer<double> value_container( value_dims,
-                                                      values.getRawPtr() );
+    int num_points = 1;
+    int space_dim = reference_point.size();
+    Kokkos::DynRankView<double, Kokkos::HostSpace> point_container(
+        "point_container", num_points, space_dim );
+    for ( int d = 0; d < space_dim; ++d )
+    {
+        point_container( 0, d ) = reference_point[d];
+    }
 
     // Evaluate the basis function.
+    int cardinality = basis->getCardinality();
+    values.resize( cardinality );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> value_container(
+        "value_container", cardinality, num_points );
     basis->getValues( value_container, point_container,
-                      Intrepid::OPERATOR_VALUE );
+                      Intrepid2::OPERATOR_VALUE );
+
+    // Extract the evaluations.
+    for ( int n = 0; n < cardinality; ++n )
+    {
+        values[n] = value_container( n, 0 );
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -114,23 +119,24 @@ void ClassicMeshNodalShapeFunction<Mesh>::evaluateGradient(
     Teuchos::Array<Teuchos::Array<double>> &gradients ) const
 {
     // Get the basis for the entity.
-    Teuchos::RCP<Intrepid::Basis<double, Intrepid::FieldContainer<double>>>
+    Teuchos::RCP<Intrepid2::Basis<Kokkos::HostSpace, double, double>>
         basis = getIntrepidBasis( entity );
 
     // Wrap the reference point.
     int space_dim = reference_point.size();
-    Teuchos::Array<int> point_dims( 2 );
-    point_dims[0] = 1;
-    point_dims[1] = space_dim;
-    Intrepid::FieldContainer<double> point_container(
-        point_dims, const_cast<double *>( reference_point.getRawPtr() ) );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> point_container(
+        "point_container", 1, space_dim );
+    for ( int d = 0; d < space_dim; ++d )
+    {
+        point_container( 0, d ) = reference_point[d];
+    }
 
     // Evaluate the basis function.
     int cardinality = basis->getCardinality();
-    Intrepid::FieldContainer<double> grad_container( cardinality, 1,
-                                                     space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> grad_container(
+        "grad_container", cardinality, 1, space_dim );
     basis->getValues( grad_container, point_container,
-                      Intrepid::OPERATOR_GRAD );
+                      Intrepid2::OPERATOR_GRAD );
 
     // Extract the evaluations.
     gradients.resize( cardinality );
@@ -147,7 +153,7 @@ void ClassicMeshNodalShapeFunction<Mesh>::evaluateGradient(
 //---------------------------------------------------------------------------//
 // Given an entity, get the intrepid basis function.
 template <class Mesh>
-Teuchos::RCP<Intrepid::Basis<double, Intrepid::FieldContainer<double>>>
+Teuchos::RCP<Intrepid2::Basis<Kokkos::HostSpace, double, double>>
 ClassicMeshNodalShapeFunction<Mesh>::getIntrepidBasis(
     const Entity &entity ) const
 {

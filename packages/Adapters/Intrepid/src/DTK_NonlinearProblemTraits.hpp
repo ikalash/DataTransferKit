@@ -75,7 +75,7 @@ class NonlinearProblemTraits
     typedef typename NonlinearProblem::md_array_type MDArray;
 
     //! Typedef for multidimensional array scalar type.
-    typedef typename MDArray::scalar_type Scalar;
+    typedef typename MDArray::value_type Scalar;
 
     //! Update the state of the nonlinear problem given a new solution vector.
     static inline void updateState( NonlinearProblem &problem,

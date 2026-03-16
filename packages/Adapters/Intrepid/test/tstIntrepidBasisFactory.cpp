@@ -58,17 +58,17 @@
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_Basis.hpp>
-#include <Intrepid_FieldContainer.hpp>
+#include <Intrepid2_Basis.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 //---------------------------------------------------------------------------//
 // Tests.
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( IntrepidBasisFactory, factory_test )
 {
-    typedef Intrepid::FieldContainer<double> MDArray;
+    typedef Kokkos::DynRankView<double, Kokkos::HostSpace> MDArray;
     typedef double Scalar;
-    typedef Intrepid::Basis<Scalar, MDArray> Basis;
+    typedef Intrepid2::Basis<Kokkos::HostSpace, double, double> Basis;
 
     // Line 2.
     {

@@ -47,9 +47,9 @@
 
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_Basis.hpp>
-#include <Intrepid_RealSpaceTools.hpp>
-#include <Intrepid_Types.hpp>
+#include <Intrepid2_Basis.hpp>
+#include <Intrepid2_RealSpaceTools.hpp>
+#include <Intrepid2_Types.hpp>
 
 namespace DataTransferKit
 {
@@ -61,24 +61,24 @@ namespace DataTransferKit
  */
 ProjectPointToFaceNonlinearProblem::ProjectPointToFaceNonlinearProblem(
     const Teuchos::RCP<
-        Intrepid::Basis<Scalar, Intrepid::FieldContainer<double>>> &face_basis,
-    const Intrepid::FieldContainer<double> &point,
-    const Intrepid::FieldContainer<double> &face_nodes,
-    const Intrepid::FieldContainer<double> &face_node_normals )
+        Intrepid2::Basis<Kokkos::HostSpace, double, double>> &face_basis,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &point,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_nodes,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_node_normals )
     : d_face_basis( face_basis )
     , d_point( point )
     , d_face_nodes( face_nodes )
     , d_face_node_normals( face_node_normals )
 {
-    d_space_dim = d_point.dimension( 0 );
+    d_space_dim = d_point.extent_int( 0 );
     d_topo_dim = d_space_dim - 1;
     d_cardinality = d_face_basis->getCardinality();
     int num_points = 1;
     d_basis_evals =
-        Intrepid::FieldContainer<double>( d_cardinality, num_points );
-    d_grad_evals = Intrepid::FieldContainer<double>( d_cardinality, num_points,
+        Kokkos::DynRankView<double, Kokkos::HostSpace>( "view", d_cardinality, num_points );
+    d_grad_evals = Kokkos::DynRankView<double, Kokkos::HostSpace>( "view", d_cardinality, num_points,
                                                      d_topo_dim );
-    d_eval_points = Intrepid::FieldContainer<double>( num_points, d_topo_dim );
+    d_eval_points = Kokkos::DynRankView<double, Kokkos::HostSpace>( "view", num_points, d_topo_dim );
 }
 
 //---------------------------------------------------------------------------//
@@ -86,7 +86,7 @@ ProjectPointToFaceNonlinearProblem::ProjectPointToFaceNonlinearProblem(
  * \brief Update the state of the problem given the new solution vector.
  */
 void ProjectPointToFaceNonlinearProblem::updateState(
-    const Intrepid::FieldContainer<double> &u )
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &u )
 {
     // Extract the current natural coordinates from the solution vector.
     for ( int i = 0; i < d_topo_dim; ++i )
@@ -96,11 +96,11 @@ void ProjectPointToFaceNonlinearProblem::updateState(
 
     // Evaluate the basis at the current natural coordinates.
     d_face_basis->getValues( d_basis_evals, d_eval_points,
-                             Intrepid::OPERATOR_VALUE );
+                             Intrepid2::OPERATOR_VALUE );
 
     // Evaluate the basis gradient at the current natural coordinates.
     d_face_basis->getValues( d_grad_evals, d_eval_points,
-                             Intrepid::OPERATOR_GRAD );
+                             Intrepid2::OPERATOR_GRAD );
 }
 
 //---------------------------------------------------------------------------//
@@ -108,13 +108,13 @@ void ProjectPointToFaceNonlinearProblem::updateState(
  * \brief Evaluate the nonlinear residual.
  */
 void ProjectPointToFaceNonlinearProblem::evaluateResidual(
-    const Intrepid::FieldContainer<double> &u,
-    Intrepid::FieldContainer<double> &F ) const
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> &F ) const
 {
     DTK_REQUIRE( 2 == u.rank() );
     DTK_REQUIRE( 2 == F.rank() );
-    DTK_REQUIRE( F.dimension( 0 ) == u.dimension( 0 ) );
-    DTK_REQUIRE( F.dimension( 1 ) == u.dimension( 1 ) );
+    DTK_REQUIRE( F.extent_int( 0 ) == u.extent_int( 0 ) );
+    DTK_REQUIRE( F.extent_int( 1 ) == u.extent_int( 1 ) );
 
     // Build the nonlinear residual.
     for ( int i = 0; i < d_space_dim; ++i )
@@ -134,14 +134,14 @@ void ProjectPointToFaceNonlinearProblem::evaluateResidual(
  * \brief Evaluate the jacobian.
  */
 void ProjectPointToFaceNonlinearProblem::evaluateJacobian(
-    const Intrepid::FieldContainer<double> &u,
-    Intrepid::FieldContainer<double> &J ) const
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> &J ) const
 {
     DTK_REQUIRE( 2 == u.rank() );
     DTK_REQUIRE( 3 == J.rank() );
-    DTK_REQUIRE( J.dimension( 0 ) == u.dimension( 0 ) );
-    DTK_REQUIRE( J.dimension( 1 ) == u.dimension( 1 ) );
-    DTK_REQUIRE( J.dimension( 2 ) == u.dimension( 1 ) );
+    DTK_REQUIRE( J.extent_int( 0 ) == u.extent_int( 0 ) );
+    DTK_REQUIRE( J.extent_int( 1 ) == u.extent_int( 1 ) );
+    DTK_REQUIRE( J.extent_int( 2 ) == u.extent_int( 1 ) );
 
     // Build the Jacobian.
     for ( int i = 0; i < d_space_dim; ++i )
@@ -177,34 +177,34 @@ void ProjectPointToFaceNonlinearProblem::evaluateJacobian(
  */
 PointInFaceVolumeOfInfluenceNonlinearProblem::
     PointInFaceVolumeOfInfluenceNonlinearProblem(
-        const Intrepid::FieldContainer<double> &point,
-        const Intrepid::FieldContainer<double> &face_edge_nodes,
-        const Intrepid::FieldContainer<double> &face_edge_node_normals,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &point,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_edge_nodes,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_edge_node_normals,
         const double c )
     : d_point( point )
     , d_face_edge_nodes( face_edge_nodes )
     , d_face_edge_node_normals( face_edge_node_normals )
     , d_c( c )
 {
-    DTK_CHECK( d_point.dimension( 0 ) == d_face_edge_nodes.dimension( 1 ) );
-    DTK_CHECK( d_point.dimension( 0 ) ==
-               d_face_edge_node_normals.dimension( 1 ) );
-    DTK_CHECK( d_face_edge_nodes.dimension( 0 ) ==
-               d_face_edge_node_normals.dimension( 0 ) );
-    d_space_dim = point.dimension( 0 );
+    DTK_CHECK( d_point.extent_int( 0 ) == d_face_edge_nodes.extent_int( 1 ) );
+    DTK_CHECK( d_point.extent_int( 0 ) ==
+               d_face_edge_node_normals.extent_int( 1 ) );
+    DTK_CHECK( d_face_edge_nodes.extent_int( 0 ) ==
+               d_face_edge_node_normals.extent_int( 0 ) );
+    d_space_dim = point.extent_int( 0 );
     d_topo_dim = d_space_dim - 1;
     d_cardinality = 4;
     int num_points = 1;
     d_basis_evals =
-        Intrepid::FieldContainer<double>( d_cardinality, num_points );
-    d_grad_evals = Intrepid::FieldContainer<double>( d_cardinality, num_points,
+        Kokkos::DynRankView<double, Kokkos::HostSpace>( "view", d_cardinality, num_points );
+    d_grad_evals = Kokkos::DynRankView<double, Kokkos::HostSpace>( "view", d_cardinality, num_points,
                                                      d_topo_dim );
-    d_eval_points = Intrepid::FieldContainer<double>( num_points, d_topo_dim );
-    d_proj_normal = Intrepid::FieldContainer<double>( d_space_dim );
+    d_eval_points = Kokkos::DynRankView<double, Kokkos::HostSpace>( "view", num_points, d_topo_dim );
+    d_proj_normal = Kokkos::DynRankView<double, Kokkos::HostSpace>( "view", d_space_dim );
 
     // Compute the two extra psuedo-nodes along the node normal
     // directions.
-    d_face_normal_nodes = Intrepid::FieldContainer<double>( 2, d_space_dim );
+    d_face_normal_nodes = Kokkos::DynRankView<double, Kokkos::HostSpace>( "view", 2, d_space_dim );
     for ( int j = 0; j < d_space_dim; ++j )
     {
         d_face_normal_nodes( 0, j ) =
@@ -219,7 +219,7 @@ PointInFaceVolumeOfInfluenceNonlinearProblem::
  * \brief Update the state of the problem given the new solution vector.
  */
 void PointInFaceVolumeOfInfluenceNonlinearProblem::updateState(
-    const Intrepid::FieldContainer<double> &u )
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &u )
 {
     // Evaluate the basis at the current natural coordinates.
     d_basis_evals( 0, 0 ) = ( 1.0 - u( 0, 0 ) ) * ( 1.0 - u( 0, 1 ) );
@@ -238,8 +238,8 @@ void PointInFaceVolumeOfInfluenceNonlinearProblem::updateState(
     d_grad_evals( 3, 0, 1 ) = 1.0 - u( 0, 0 );
 
     // Compute the current projection normal direction.
-    Intrepid::FieldContainer<double> v1( d_space_dim );
-    Intrepid::FieldContainer<double> v2( d_space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> v1( "v1", d_space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> v2( "v2", d_space_dim );
     for ( int i = 0; i < d_space_dim; ++i )
     {
         v1( i ) = d_face_edge_nodes( 1, i ) - d_face_edge_nodes( 0, i ) +
@@ -248,7 +248,7 @@ void PointInFaceVolumeOfInfluenceNonlinearProblem::updateState(
         v2( i ) = u( 0, 0 ) * d_face_edge_node_normals( 1, i ) +
                   ( 1 - u( 0, 0 ) ) * d_face_edge_node_normals( 0, i );
     }
-    Intrepid::RealSpaceTools<Scalar>::vecprod( d_proj_normal, v1, v2 );
+    Intrepid2::RealSpaceTools<Kokkos::HostSpace>::vecprod( d_proj_normal, v1, v2 );
 }
 
 //---------------------------------------------------------------------------//
@@ -256,13 +256,13 @@ void PointInFaceVolumeOfInfluenceNonlinearProblem::updateState(
  * \brief Evaluate the nonlinear residual.
  */
 void PointInFaceVolumeOfInfluenceNonlinearProblem::evaluateResidual(
-    const Intrepid::FieldContainer<double> &u,
-    Intrepid::FieldContainer<double> &F ) const
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> &F ) const
 {
     DTK_REQUIRE( 2 == u.rank() );
     DTK_REQUIRE( 2 == F.rank() );
-    DTK_REQUIRE( F.dimension( 0 ) == u.dimension( 0 ) );
-    DTK_REQUIRE( F.dimension( 1 ) == u.dimension( 1 ) );
+    DTK_REQUIRE( F.extent_int( 0 ) == u.extent_int( 0 ) );
+    DTK_REQUIRE( F.extent_int( 1 ) == u.extent_int( 1 ) );
 
     // Build the nonlinear residual.
     for ( int i = 0; i < d_space_dim; ++i )
@@ -280,14 +280,14 @@ void PointInFaceVolumeOfInfluenceNonlinearProblem::evaluateResidual(
  * \brief Evaluate the jacobian.
  */
 void PointInFaceVolumeOfInfluenceNonlinearProblem::evaluateJacobian(
-    const Intrepid::FieldContainer<double> &u,
-    Intrepid::FieldContainer<double> &J ) const
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> &J ) const
 {
     DTK_REQUIRE( 2 == u.rank() );
     DTK_REQUIRE( 3 == J.rank() );
-    DTK_REQUIRE( J.dimension( 0 ) == u.dimension( 0 ) );
-    DTK_REQUIRE( J.dimension( 1 ) == u.dimension( 1 ) );
-    DTK_REQUIRE( J.dimension( 2 ) == u.dimension( 1 ) );
+    DTK_REQUIRE( J.extent_int( 0 ) == u.extent_int( 0 ) );
+    DTK_REQUIRE( J.extent_int( 1 ) == u.extent_int( 1 ) );
+    DTK_REQUIRE( J.extent_int( 2 ) == u.extent_int( 1 ) );
 
     // Build the Jacobian.
     for ( int i = 0; i < d_space_dim; ++i )
@@ -315,10 +315,10 @@ void PointInFaceVolumeOfInfluenceNonlinearProblem::evaluateJacobian(
  */
 ProjectPointFeatureToEdgeFeatureNonlinearProblem::
     ProjectPointFeatureToEdgeFeatureNonlinearProblem(
-        const Intrepid::FieldContainer<double> &point,
-        const Intrepid::FieldContainer<double> &edge_nodes,
-        const Intrepid::FieldContainer<double> &edge_node_normals,
-        const Intrepid::FieldContainer<double> &edge_node_binormals )
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &point,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &edge_nodes,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &edge_node_normals,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &edge_node_binormals )
     : d_point( point )
     , d_edge_nodes( edge_nodes )
     , d_edge_node_normals( edge_node_normals )
@@ -328,14 +328,14 @@ ProjectPointFeatureToEdgeFeatureNonlinearProblem::
     DTK_CHECK( 2 == d_edge_nodes.rank() );
     DTK_CHECK( 2 == d_edge_node_normals.rank() );
     DTK_CHECK( 2 == d_edge_node_binormals.rank() );
-    DTK_CHECK( d_point.dimension( 0 ) == d_edge_nodes.dimension( 1 ) );
-    DTK_CHECK( d_point.dimension( 0 ) == d_edge_node_normals.dimension( 1 ) );
-    DTK_CHECK( d_edge_nodes.dimension( 0 ) ==
-               d_edge_node_normals.dimension( 0 ) );
-    DTK_CHECK( d_point.dimension( 0 ) == d_edge_node_binormals.dimension( 1 ) );
-    DTK_CHECK( d_edge_nodes.dimension( 0 ) ==
-               d_edge_node_binormals.dimension( 0 ) );
-    d_space_dim = d_point.dimension( 0 );
+    DTK_CHECK( d_point.extent_int( 0 ) == d_edge_nodes.extent_int( 1 ) );
+    DTK_CHECK( d_point.extent_int( 0 ) == d_edge_node_normals.extent_int( 1 ) );
+    DTK_CHECK( d_edge_nodes.extent_int( 0 ) ==
+               d_edge_node_normals.extent_int( 0 ) );
+    DTK_CHECK( d_point.extent_int( 0 ) == d_edge_node_binormals.extent_int( 1 ) );
+    DTK_CHECK( d_edge_nodes.extent_int( 0 ) ==
+               d_edge_node_binormals.extent_int( 0 ) );
+    d_space_dim = d_point.extent_int( 0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -343,7 +343,7 @@ ProjectPointFeatureToEdgeFeatureNonlinearProblem::
  * \brief Update the state of the problem given the new solution vector.
  */
 void ProjectPointFeatureToEdgeFeatureNonlinearProblem::updateState(
-    const Intrepid::FieldContainer<double> &u )
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &u )
 { /* ... */
 }
 
@@ -352,13 +352,13 @@ void ProjectPointFeatureToEdgeFeatureNonlinearProblem::updateState(
  * \brief Evaluate the nonlinear residual.
  */
 void ProjectPointFeatureToEdgeFeatureNonlinearProblem::evaluateResidual(
-    const Intrepid::FieldContainer<double> &u,
-    Intrepid::FieldContainer<double> &F ) const
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> &F ) const
 {
     DTK_REQUIRE( 2 == u.rank() );
     DTK_REQUIRE( 2 == F.rank() );
-    DTK_REQUIRE( F.dimension( 0 ) == u.dimension( 0 ) );
-    DTK_REQUIRE( F.dimension( 1 ) == u.dimension( 1 ) );
+    DTK_REQUIRE( F.extent_int( 0 ) == u.extent_int( 0 ) );
+    DTK_REQUIRE( F.extent_int( 1 ) == u.extent_int( 1 ) );
 
     // Build the nonlinear residual.
     for ( int i = 0; i < d_space_dim; ++i )
@@ -381,14 +381,14 @@ void ProjectPointFeatureToEdgeFeatureNonlinearProblem::evaluateResidual(
  * \brief Evaluate the jacobian.
  */
 void ProjectPointFeatureToEdgeFeatureNonlinearProblem::evaluateJacobian(
-    const Intrepid::FieldContainer<double> &u,
-    Intrepid::FieldContainer<double> &J ) const
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> &J ) const
 {
     DTK_REQUIRE( 2 == u.rank() );
     DTK_REQUIRE( 3 == J.rank() );
-    DTK_REQUIRE( J.dimension( 0 ) == u.dimension( 0 ) );
-    DTK_REQUIRE( J.dimension( 1 ) == u.dimension( 1 ) );
-    DTK_REQUIRE( J.dimension( 2 ) == u.dimension( 1 ) );
+    DTK_REQUIRE( J.extent_int( 0 ) == u.extent_int( 0 ) );
+    DTK_REQUIRE( J.extent_int( 1 ) == u.extent_int( 1 ) );
+    DTK_REQUIRE( J.extent_int( 2 ) == u.extent_int( 1 ) );
 
     // Build the Jacobian.
     for ( int i = 0; i < d_space_dim; ++i )

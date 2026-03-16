@@ -45,7 +45,7 @@
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 namespace DataTransferKit
 {
@@ -86,22 +86,22 @@ void MoabEntityIntegrationRule::getIntegrationRule(
 
     // If we haven't already created a cubature for this topology and order
     // create one.
-    Teuchos::RCP<Intrepid::Cubature<double>> cub_rule;
+    Teuchos::RCP<Intrepid2::Cubature<Kokkos::HostSpace, double, double>> cub_rule;
     if ( d_cub_rules.count( cub_key ) )
     {
         cub_rule = d_cub_rules.find( cub_key )->second;
     }
     else
     {
-        cub_rule = d_intrepid_factory.create( cell_topo, order );
+        cub_rule = d_intrepid_factory.create<Kokkos::HostSpace, double, double>( cell_topo, order );
         d_cub_rules.emplace( cub_key, cub_rule );
     }
 
     // Get the cubature rule.
     int num_points = cub_rule->getNumPoints();
     int cub_dim = cub_rule->getDimension();
-    Intrepid::FieldContainer<double> cub_points( num_points, cub_dim );
-    Intrepid::FieldContainer<double> cub_weights( num_points );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> cub_points( "cub_points", num_points, cub_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> cub_weights( "cub_weights", num_points );
     cub_rule->getCubature( cub_points, cub_weights );
 
     // Write the data into the output arrays.

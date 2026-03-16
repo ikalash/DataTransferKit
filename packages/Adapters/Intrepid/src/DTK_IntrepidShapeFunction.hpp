@@ -46,8 +46,8 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_RCP.hpp>
 
-#include <Intrepid_Basis.hpp>
-#include <Intrepid_FieldContainer.hpp>
+#include <Intrepid2_Basis.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 #include <Shards_CellTopology.hpp>
 
@@ -94,14 +94,14 @@ class IntrepidShapeFunction
 
   private:
     // Get the basis of a topology.
-    Teuchos::RCP<Intrepid::Basis<double, Intrepid::FieldContainer<double>>>
+    Teuchos::RCP<Intrepid2::Basis<Kokkos::HostSpace, double, double>>
     getIntrepidBasis( const shards::CellTopology &topology ) const;
 
   private:
     // Map of already created shape functions.
     mutable std::unordered_map<
         unsigned,
-        Teuchos::RCP<Intrepid::Basis<double, Intrepid::FieldContainer<double>>>>
+        Teuchos::RCP<Intrepid2::Basis<Kokkos::HostSpace, double, double>>>
         d_basis;
 };
 

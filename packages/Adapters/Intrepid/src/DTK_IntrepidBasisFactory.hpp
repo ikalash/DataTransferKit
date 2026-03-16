@@ -45,8 +45,8 @@
 
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_Basis.hpp>
-#include <Intrepid_FieldContainer.hpp>
+#include <Intrepid2_Basis.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 namespace DataTransferKit
 {
@@ -61,7 +61,7 @@ class IntrepidBasisFactory
   public:
     // Creation method.
     static Teuchos::RCP<
-        Intrepid::Basis<double, Intrepid::FieldContainer<double>>>
+        Intrepid2::Basis<Kokkos::HostSpace, double, double>>
     create( const shards::CellTopology &cell_topo );
 };
 

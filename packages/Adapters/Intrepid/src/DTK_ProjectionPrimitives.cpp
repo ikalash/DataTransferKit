@@ -54,7 +54,7 @@
 
 #include <Shards_BasicTopologies.hpp>
 
-#include <Intrepid_RealSpaceTools.hpp>
+#include <Intrepid2_RealSpaceTools.hpp>
 
 namespace DataTransferKit
 {
@@ -67,13 +67,13 @@ namespace DataTransferKit
  */
 void ProjectionPrimitives::referenceCellCenter(
     const shards::CellTopology &cell_topo,
-    Intrepid::FieldContainer<double> &cell_center )
+    Kokkos::DynRankView<double, Kokkos::HostSpace> &cell_center )
 {
     DTK_REQUIRE( 2 == cell_center.rank() );
-    DTK_REQUIRE( Teuchos::as<unsigned>( cell_center.dimension( 1 ) ) ==
+    DTK_REQUIRE( Teuchos::as<unsigned>( cell_center.extent_int( 1 ) ) ==
                  cell_topo.getDimension() );
 
-    int num_cells = cell_center.dimension( 0 );
+    int num_cells = cell_center.extent_int( 0 );
 
     switch ( cell_topo.getKey() )
     {
@@ -175,23 +175,23 @@ void ProjectionPrimitives::referenceCellCenter(
  */
 bool ProjectionPrimitives::pointInFaceVolumeOfInfluence(
     const Teuchos::ParameterList &parameters,
-    const Intrepid::FieldContainer<double> &point,
-    const Intrepid::FieldContainer<double> &face_nodes,
-    const Intrepid::FieldContainer<double> &face_node_normals,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &point,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_nodes,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_node_normals,
     const shards::CellTopology &face_topology )
 {
     DTK_REQUIRE( 1 == point.rank() );
     DTK_REQUIRE( 2 == face_nodes.rank() );
     DTK_REQUIRE( 2 == face_node_normals.rank() );
-    DTK_REQUIRE( point.dimension( 0 ) == face_nodes.dimension( 1 ) );
-    DTK_REQUIRE( point.dimension( 0 ) == face_node_normals.dimension( 1 ) );
-    DTK_REQUIRE( face_nodes.dimension( 0 ) ==
-                 face_node_normals.dimension( 0 ) );
-    DTK_REQUIRE( Teuchos::as<unsigned>( face_nodes.dimension( 0 ) ) ==
+    DTK_REQUIRE( point.extent_int( 0 ) == face_nodes.extent_int( 1 ) );
+    DTK_REQUIRE( point.extent_int( 0 ) == face_node_normals.extent_int( 1 ) );
+    DTK_REQUIRE( face_nodes.extent_int( 0 ) ==
+                 face_node_normals.extent_int( 0 ) );
+    DTK_REQUIRE( Teuchos::as<unsigned>( face_nodes.extent_int( 0 ) ) ==
                  face_topology.getNodeCount() );
 
     // Get the spatial dimension
-    int space_dim = point.dimension( 0 );
+    int space_dim = point.extent_int( 0 );
     DTK_CHECK( 3 == space_dim );
 
     // Get the geometric tolerance.
@@ -203,10 +203,10 @@ bool ProjectionPrimitives::pointInFaceVolumeOfInfluence(
     // surface then it is within the volume of influence of the
     // face. Counter-clockwise ordering of the nodes on the face about the
     // outward facing normal is required.
-    Intrepid::FieldContainer<double> face_edge_nodes( 2, space_dim );
-    Intrepid::FieldContainer<double> face_edge_node_normals( 2, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> face_edge_nodes( "face_edge_nodes", 2, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> face_edge_node_normals( "face_edge_node_normals", 2, space_dim );
     double distance_to_surface = 0.0;
-    int face_num_edges = face_nodes.dimension( 0 );
+    int face_num_edges = face_nodes.extent_int( 0 );
 
     // First edges.
     for ( int e = 0; e < face_num_edges - 1; ++e )
@@ -278,31 +278,31 @@ bool ProjectionPrimitives::pointInFaceVolumeOfInfluence(
  */
 void ProjectionPrimitives::projectPointToFace(
     const Teuchos::ParameterList &parameters,
-    const Intrepid::FieldContainer<double> &point,
-    const Intrepid::FieldContainer<double> &face_nodes,
-    const Intrepid::FieldContainer<double> &face_node_normals,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &point,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_nodes,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_node_normals,
     const shards::CellTopology &face_topology,
-    Intrepid::FieldContainer<double> &parametric_point,
-    Intrepid::FieldContainer<double> &physical_point, int &face_edge_id,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> &parametric_point,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> &physical_point, int &face_edge_id,
     int &face_node_id )
 {
     DTK_REQUIRE( 1 == point.rank() );
     DTK_REQUIRE( 2 == face_nodes.rank() );
     DTK_REQUIRE( 2 == face_node_normals.rank() );
     DTK_REQUIRE( 1 == physical_point.rank() );
-    DTK_REQUIRE( point.dimension( 0 ) == face_nodes.dimension( 1 ) );
-    DTK_REQUIRE( point.dimension( 0 ) == face_node_normals.dimension( 1 ) );
-    DTK_REQUIRE( point.dimension( 0 ) == physical_point.dimension( 0 ) );
-    DTK_REQUIRE( face_nodes.dimension( 0 ) ==
-                 face_node_normals.dimension( 0 ) );
-    DTK_REQUIRE( Teuchos::as<unsigned>( face_nodes.dimension( 0 ) ) ==
+    DTK_REQUIRE( point.extent_int( 0 ) == face_nodes.extent_int( 1 ) );
+    DTK_REQUIRE( point.extent_int( 0 ) == face_node_normals.extent_int( 1 ) );
+    DTK_REQUIRE( point.extent_int( 0 ) == physical_point.extent_int( 0 ) );
+    DTK_REQUIRE( face_nodes.extent_int( 0 ) ==
+                 face_node_normals.extent_int( 0 ) );
+    DTK_REQUIRE( Teuchos::as<unsigned>( face_nodes.extent_int( 0 ) ) ==
                  face_topology.getNodeCount() );
     DTK_REQUIRE( 2 == parametric_point.rank() );
-    DTK_REQUIRE( 1 == parametric_point.dimension( 0 ) );
-    DTK_REQUIRE( point.dimension( 0 ) == parametric_point.dimension( 1 ) );
+    DTK_REQUIRE( 1 == parametric_point.extent_int( 0 ) );
+    DTK_REQUIRE( point.extent_int( 0 ) == parametric_point.extent_int( 1 ) );
 
     // Get dimensions.
-    int space_dim = point.dimension( 0 );
+    int space_dim = point.extent_int( 0 );
     int topo_dim = face_topology.getDimension();
 
     // Get the geometric tolerance.
@@ -316,16 +316,16 @@ void ProjectionPrimitives::projectPointToFace(
     double max_newton_iters = parameters.get<int>( "Max Newton Iterations" );
 
     // Get the basis functions for the face cell topology.
-    Teuchos::RCP<Intrepid::Basis<double, Intrepid::FieldContainer<double>>>
+    Teuchos::RCP<Intrepid2::Basis<Kokkos::HostSpace, double, double>>
         face_basis = IntrepidBasisFactory::create( face_topology );
 
     // Initializeunknown vector.
-    parametric_point.initialize( 0.0 );
+    Kokkos::deep_copy(parametric_point, 0.0);
 
     // Set the initial solution guess to the center of the cell for the
     // parametric coordinates and 0 for distance.
     int num_points = 1;
-    Intrepid::FieldContainer<double> face_center( num_points, topo_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> face_center( "face_center", num_points, topo_dim );
     referenceCellCenter( face_topology, face_center );
     for ( int n = 0; n < topo_dim; ++n )
     {
@@ -503,26 +503,26 @@ void ProjectionPrimitives::projectPointToFace(
  */
 bool ProjectionPrimitives::projectPointFeatureToEdgeFeature(
     const Teuchos::ParameterList &parameters,
-    const Intrepid::FieldContainer<double> &point,
-    const Intrepid::FieldContainer<double> &point_normal,
-    const Intrepid::FieldContainer<double> &edge_nodes,
-    const Intrepid::FieldContainer<double> &edge_node_normals,
-    Intrepid::FieldContainer<double> &projected_point, int &edge_node_id )
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &point,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &point_normal,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &edge_nodes,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &edge_node_normals,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> &projected_point, int &edge_node_id )
 {
     DTK_REQUIRE( 1 == point.rank() );
     DTK_REQUIRE( 1 == point_normal.rank() );
     DTK_REQUIRE( 2 == edge_nodes.rank() );
     DTK_REQUIRE( 2 == edge_node_normals.rank() );
     DTK_REQUIRE( 1 == projected_point.rank() );
-    DTK_REQUIRE( point.dimension( 0 ) == edge_nodes.dimension( 1 ) );
-    DTK_REQUIRE( point.dimension( 0 ) == edge_node_normals.dimension( 1 ) );
-    DTK_REQUIRE( point.dimension( 0 ) == projected_point.dimension( 0 ) );
-    DTK_REQUIRE( edge_nodes.dimension( 0 ) ==
-                 edge_node_normals.dimension( 0 ) );
-    DTK_REQUIRE( edge_nodes.dimension( 0 ) == 2 );
+    DTK_REQUIRE( point.extent_int( 0 ) == edge_nodes.extent_int( 1 ) );
+    DTK_REQUIRE( point.extent_int( 0 ) == edge_node_normals.extent_int( 1 ) );
+    DTK_REQUIRE( point.extent_int( 0 ) == projected_point.extent_int( 0 ) );
+    DTK_REQUIRE( edge_nodes.extent_int( 0 ) ==
+                 edge_node_normals.extent_int( 0 ) );
+    DTK_REQUIRE( edge_nodes.extent_int( 0 ) == 2 );
 
     // Get dimensions.
-    int space_dim = point.dimension( 0 );
+    int space_dim = point.extent_int( 0 );
 
     // Get the geometric tolerance.
     double geometric_tolerance =
@@ -552,22 +552,21 @@ bool ProjectionPrimitives::projectPointFeatureToEdgeFeature(
     }
 
     // Build the binormals.
-    Intrepid::FieldContainer<double> gvec( space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> gvec( "gvec", space_dim );
     for ( int d = 0; d < space_dim; ++d )
     {
         gvec( d ) = edge_nodes( 1, d ) - edge_nodes( 0, d );
     }
-    Intrepid::FieldContainer<double> normal( space_dim );
-    Intrepid::FieldContainer<double> l( space_dim );
-    Intrepid::FieldContainer<double> edge_node_binormals(
-        edge_node_normals.dimension( 0 ), edge_node_normals.dimension( 1 ) );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> normal( "normal", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> l( "l", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_node_binormals( "edge_node_binormals",         edge_node_normals.extent_int( 0 ), edge_node_normals.extent_int( 1 ) );
     for ( int n = 0; n < 2; ++n )
     {
         for ( int d = 0; d < space_dim; ++d )
         {
             normal( d ) = edge_node_normals( n, d );
         }
-        Intrepid::RealSpaceTools<double>::vecprod( l, normal, gvec );
+        Intrepid2::RealSpaceTools<Kokkos::HostSpace>::vecprod( l, normal, gvec );
         for ( int d = 0; d < space_dim; ++d )
         {
             edge_node_binormals( n, d ) = l( d );
@@ -576,7 +575,7 @@ bool ProjectionPrimitives::projectPointFeatureToEdgeFeature(
 
     // Allocate unknown vector.
     int num_points = 1;
-    Intrepid::FieldContainer<double> u( num_points, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> u( "u", num_points, space_dim );
 
     // Set the initial solution guess to 0.5.
     for ( int n = 0; n < space_dim; ++n )
@@ -662,11 +661,11 @@ bool ProjectionPrimitives::projectPointFeatureToEdgeFeature(
 */
 bool ProjectionPrimitives::edgeEdgeIntersection(
     const Teuchos::ParameterList &parameters,
-    const Intrepid::FieldContainer<double> &edge_1,
-    const Intrepid::FieldContainer<double> &edge_2,
-    const Intrepid::FieldContainer<double> &edge_2_node_normals,
-    Intrepid::FieldContainer<double> &edge_1_intersection,
-    Intrepid::FieldContainer<double> &edge_2_intersection, int &edge_1_node_id,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &edge_1,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &edge_2,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &edge_2_node_normals,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> &edge_1_intersection,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> &edge_2_intersection, int &edge_1_node_id,
     int &edge_2_node_id )
 {
     DTK_REQUIRE( 2 == edge_1.rank() );
@@ -674,19 +673,19 @@ bool ProjectionPrimitives::edgeEdgeIntersection(
     DTK_REQUIRE( 2 == edge_2_node_normals.rank() );
     DTK_REQUIRE( 1 == edge_1_intersection.rank() );
     DTK_REQUIRE( 1 == edge_2_intersection.rank() );
-    DTK_REQUIRE( 2 == edge_1.dimension( 0 ) );
-    DTK_REQUIRE( 2 == edge_2.dimension( 0 ) );
-    DTK_REQUIRE( 2 == edge_2_node_normals.dimension( 0 ) );
-    DTK_REQUIRE( edge_1.dimension( 1 ) == edge_2.dimension( 1 ) );
-    DTK_REQUIRE( edge_1.dimension( 1 ) == edge_2_node_normals.dimension( 1 ) );
-    DTK_REQUIRE( edge_1.dimension( 1 ) == edge_1_intersection.dimension( 0 ) );
-    DTK_REQUIRE( edge_1.dimension( 1 ) == edge_2_intersection.dimension( 0 ) );
+    DTK_REQUIRE( 2 == edge_1.extent_int( 0 ) );
+    DTK_REQUIRE( 2 == edge_2.extent_int( 0 ) );
+    DTK_REQUIRE( 2 == edge_2_node_normals.extent_int( 0 ) );
+    DTK_REQUIRE( edge_1.extent_int( 1 ) == edge_2.extent_int( 1 ) );
+    DTK_REQUIRE( edge_1.extent_int( 1 ) == edge_2_node_normals.extent_int( 1 ) );
+    DTK_REQUIRE( edge_1.extent_int( 1 ) == edge_1_intersection.extent_int( 0 ) );
+    DTK_REQUIRE( edge_1.extent_int( 1 ) == edge_2_intersection.extent_int( 0 ) );
 
     // The condition number tolerance.
     double cond_tol = 1.0 / std::sqrt( std::numeric_limits<double>::epsilon() );
 
     // Get the spatial dimension.
-    int space_dim = edge_1.dimension( 1 );
+    int space_dim = edge_1.extent_int( 1 );
 
     // Get the geometric tolerance.
     double geometric_tolerance =
@@ -696,11 +695,11 @@ bool ProjectionPrimitives::edgeEdgeIntersection(
     double merge_tolerance = parameters.get<double>( "Merge Tolerance" );
 
     // Build intermediate vectors.
-    Intrepid::FieldContainer<double> bvec( space_dim );
-    Intrepid::FieldContainer<double> gvec( space_dim );
-    Intrepid::FieldContainer<double> dvec( space_dim );
-    Intrepid::FieldContainer<double> d0( space_dim );
-    Intrepid::FieldContainer<double> g0minusb0( space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> bvec( "bvec", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> gvec( "gvec", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> dvec( "dvec", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d0( "d0", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> g0minusb0( "g0minusb0", space_dim );
     for ( int i = 0; i < space_dim; ++i )
     {
         bvec( i ) = edge_1( 1, i ) - edge_1( 0, i );
@@ -716,13 +715,13 @@ bool ProjectionPrimitives::edgeEdgeIntersection(
 
     // Compute the parameterized realization of the intersection on edge
     // 2. Start by building the quadratic equation coefficients.
-    Intrepid::FieldContainer<double> work_vec( space_dim );
-    Intrepid::RealSpaceTools<double>::vecprod( work_vec, bvec, dvec );
-    double a = Intrepid::RealSpaceTools<double>::dot( work_vec, gvec );
-    double b = Intrepid::RealSpaceTools<double>::dot( work_vec, g0minusb0 );
-    Intrepid::RealSpaceTools<double>::vecprod( work_vec, bvec, d0 );
-    b += Intrepid::RealSpaceTools<double>::dot( work_vec, gvec );
-    double c = Intrepid::RealSpaceTools<double>::dot( work_vec, g0minusb0 );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> work_vec( "work_vec", space_dim );
+    Intrepid2::RealSpaceTools<Kokkos::HostSpace>::vecprod( work_vec, bvec, dvec );
+    double a = Intrepid2::RealSpaceTools<>::Serial::dot( work_vec, gvec );
+    double b = Intrepid2::RealSpaceTools<>::Serial::dot( work_vec, g0minusb0 );
+    Intrepid2::RealSpaceTools<Kokkos::HostSpace>::vecprod( work_vec, bvec, d0 );
+    b += Intrepid2::RealSpaceTools<>::Serial::dot( work_vec, gvec );
+    double c = Intrepid2::RealSpaceTools<>::Serial::dot( work_vec, g0minusb0 );
 
     // Solve the quadratic equation if a != 0 to get the parameterized
     // realization of the intersection on the edge 2.
@@ -816,7 +815,7 @@ bool ProjectionPrimitives::edgeEdgeIntersection(
     }
 
     // Check the condition number of beta.
-    Intrepid::FieldContainer<double> nvec( space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> nvec( "nvec", space_dim );
     double n_length = 0.0;
     double g_length = 0.0;
     for ( int i = 0; i < space_dim; ++i )
@@ -825,8 +824,8 @@ bool ProjectionPrimitives::edgeEdgeIntersection(
         n_length += nvec( i ) * nvec( i );
         g_length += gvec( i ) * gvec( i );
     }
-    Intrepid::FieldContainer<double> ncrossg( space_dim );
-    Intrepid::RealSpaceTools<double>::vecprod( ncrossg, nvec, gvec );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> ncrossg( "ncrossg", space_dim );
+    Intrepid2::RealSpaceTools<Kokkos::HostSpace>::vecprod( ncrossg, nvec, gvec );
     double ncrossg_length = 0.0;
     for ( int i = 0; i < space_dim; ++i )
     {
@@ -847,12 +846,12 @@ bool ProjectionPrimitives::edgeEdgeIntersection(
 
     // Compute the parameterized realization of the intersection on the edge
     // 1.
-    Intrepid::FieldContainer<double> l( space_dim );
-    Intrepid::RealSpaceTools<double>::scale( dvec, beta );
-    Intrepid::RealSpaceTools<double>::add( work_vec, d0, dvec );
-    Intrepid::RealSpaceTools<double>::vecprod( l, gvec, work_vec );
-    double dot1 = Intrepid::RealSpaceTools<double>::dot( l, g0minusb0 );
-    double dot2 = Intrepid::RealSpaceTools<double>::dot( l, bvec );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> l( "l", space_dim );
+    Intrepid2::RealSpaceTools<Kokkos::HostSpace>::scale( dvec, beta );
+    Intrepid2::RealSpaceTools<Kokkos::HostSpace>::add( work_vec, d0, dvec );
+    Intrepid2::RealSpaceTools<Kokkos::HostSpace>::vecprod( l, gvec, work_vec );
+    double dot1 = Intrepid2::RealSpaceTools<>::Serial::dot( l, g0minusb0 );
+    double dot2 = Intrepid2::RealSpaceTools<>::Serial::dot( l, bvec );
 
     if ( std::abs( dot2 ) < geometric_tolerance )
     {
@@ -872,7 +871,7 @@ bool ProjectionPrimitives::edgeEdgeIntersection(
     }
 
     // Check the condition number of alpha.
-    Intrepid::FieldContainer<double> lvec( space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> lvec( "lvec", space_dim );
     double l_length = 0.0;
     double b_length = 0.0;
     for ( int i = 0; i < space_dim; ++i )
@@ -881,8 +880,8 @@ bool ProjectionPrimitives::edgeEdgeIntersection(
         l_length += lvec( i ) * lvec( i );
         b_length += bvec( i ) * bvec( i );
     }
-    Intrepid::FieldContainer<double> lcrossb( space_dim );
-    Intrepid::RealSpaceTools<double>::vecprod( lcrossb, lvec, bvec );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> lcrossb( "lcrossb", space_dim );
+    Intrepid2::RealSpaceTools<Kokkos::HostSpace>::vecprod( lcrossb, lvec, bvec );
     double lcrossb_length = 0.0;
     for ( int i = 0; i < space_dim; ++i )
     {
@@ -927,7 +926,7 @@ bool ProjectionPrimitives::edgeEdgeIntersection(
 
     // Check the error in the solution.
     double d_length = 0.0;
-    Intrepid::FieldContainer<double> v_vec( space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> v_vec( "v_vec", space_dim );
     for ( int i = 0; i < space_dim; ++i )
     {
         d_length += work_vec( i ) * work_vec( i );
@@ -1001,12 +1000,12 @@ bool ProjectionPrimitives::edgeEdgeIntersection(
  * \param face_edge_node_normals Normal vectors for each face edge node
  * (Node,Dim).
  */
-typename Intrepid::FieldContainer<double>::scalar_type
+double
 ProjectionPrimitives::distanceToFaceBilinearSurface(
     const Teuchos::ParameterList &parameters,
-    const Intrepid::FieldContainer<double> &point,
-    const Intrepid::FieldContainer<double> &face_edge_nodes,
-    const Intrepid::FieldContainer<double> &face_edge_node_normals )
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &point,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_edge_nodes,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_edge_node_normals )
 {
     // Get the geometric tolerance.
     double geometric_tolerance =
@@ -1026,7 +1025,7 @@ ProjectionPrimitives::distanceToFaceBilinearSurface(
     double c = 0.5 * std::sqrt( xdist * xdist + ydist * ydist + zdist * zdist );
 
     // Get the distance to the bilinear surface.
-    Intrepid::FieldContainer<double> u( 1, point.dimension( 0 ) );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> u( "u", 1, point.extent_int( 0 ) );
     u( 0, 0 ) = 0.5;
     u( 0, 1 ) = 0.5;
     u( 0, 2 ) = Teuchos::ScalarTraits<double>::zero();
@@ -1037,8 +1036,8 @@ ProjectionPrimitives::distanceToFaceBilinearSurface(
 
     // Check for degeneracy.
     nonlinear_problem.updateState( u );
-    Intrepid::FieldContainer<double> v1( nonlinear_problem.d_space_dim );
-    Intrepid::FieldContainer<double> v2( nonlinear_problem.d_space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> v1( "v1", nonlinear_problem.d_space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> v2( "v2", nonlinear_problem.d_space_dim );
     for ( int i = 0; i < nonlinear_problem.d_space_dim; ++i )
     {
         v1( i ) = nonlinear_problem.d_face_edge_nodes( 1, i ) -
@@ -1050,7 +1049,7 @@ ProjectionPrimitives::distanceToFaceBilinearSurface(
     }
 
     // Return a positive number if degenerate.
-    if ( Intrepid::RealSpaceTools<double>::dot( v1, v2 ) < geometric_tolerance )
+    if ( Intrepid2::RealSpaceTools<>::Serial::dot( v1, v2 ) < geometric_tolerance )
     {
         return 1.0;
     }

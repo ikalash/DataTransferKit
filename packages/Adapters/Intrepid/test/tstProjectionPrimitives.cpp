@@ -51,7 +51,7 @@
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 #include "DTK_ProjectionPrimitives.hpp"
 
@@ -85,9 +85,9 @@ TEUCHOS_UNIT_TEST( ProjectionPrimitives, quad_face_volume_of_influence_test )
 
     int elem_num_nodes = 4;
     unsigned space_dim = 3;
-    Intrepid::FieldContainer<double> point( space_dim );
-    Intrepid::FieldContainer<double> side_nodes( elem_num_nodes, space_dim );
-    Intrepid::FieldContainer<double> side_node_normals( elem_num_nodes,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> point( "point", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> side_nodes( "side_nodes", elem_num_nodes, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> side_node_normals( "side_node_normals", elem_num_nodes,
                                                         space_dim );
     shards::CellTopology side_topo =
         shards::getCellTopologyData<shards::Quadrilateral<4>>();
@@ -215,9 +215,9 @@ TEUCHOS_UNIT_TEST( ProjectionPrimitives, tri_face_volume_of_influence_test )
 
     int elem_num_nodes = 3;
     unsigned space_dim = 3;
-    Intrepid::FieldContainer<double> point( space_dim );
-    Intrepid::FieldContainer<double> side_nodes( elem_num_nodes, space_dim );
-    Intrepid::FieldContainer<double> side_node_normals( elem_num_nodes,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> point( "point", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> side_nodes( "side_nodes", elem_num_nodes, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> side_node_normals( "side_node_normals", elem_num_nodes,
                                                         space_dim );
     shards::CellTopology side_topo =
         shards::getCellTopologyData<shards::Triangle<3>>();
@@ -339,11 +339,11 @@ TEUCHOS_UNIT_TEST( ProjectionPrimitives, quad_blue_to_green_projection_test )
 
     int elem_num_nodes = 4;
     unsigned space_dim = 3;
-    Intrepid::FieldContainer<double> point( space_dim );
-    Intrepid::FieldContainer<double> proj_point( space_dim );
-    Intrepid::FieldContainer<double> param_point( 1, space_dim );
-    Intrepid::FieldContainer<double> side_nodes( elem_num_nodes, space_dim );
-    Intrepid::FieldContainer<double> side_node_normals( elem_num_nodes,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> point( "point", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> proj_point( "proj_point", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> param_point( "param_point", 1, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> side_nodes( "side_nodes", elem_num_nodes, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> side_node_normals( "side_node_normals", elem_num_nodes,
                                                         space_dim );
     shards::CellTopology side_topo =
         shards::getCellTopologyData<shards::Quadrilateral<4>>();
@@ -562,11 +562,11 @@ TEUCHOS_UNIT_TEST( ProjectionPrimitives, tri_blue_to_green_projection_test )
 {
     int elem_num_nodes = 3;
     unsigned space_dim = 3;
-    Intrepid::FieldContainer<double> point( space_dim );
-    Intrepid::FieldContainer<double> param_point( 1, space_dim );
-    Intrepid::FieldContainer<double> proj_point( space_dim );
-    Intrepid::FieldContainer<double> side_nodes( elem_num_nodes, space_dim );
-    Intrepid::FieldContainer<double> side_node_normals( elem_num_nodes,
+    Kokkos::DynRankView<double, Kokkos::HostSpace> point( "point", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> param_point( "param_point", 1, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> proj_point( "proj_point", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> side_nodes( "side_nodes", elem_num_nodes, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> side_node_normals( "side_node_normals", elem_num_nodes,
                                                         space_dim );
     shards::CellTopology side_topo =
         shards::getCellTopologyData<shards::Triangle<3>>();
@@ -743,11 +743,11 @@ TEUCHOS_UNIT_TEST( ProjectionPrimitives, project_blue_feature_test )
 
     // Allocate Arrays.
     int space_dim = 3;
-    Intrepid::FieldContainer<double> blue_point( space_dim );
-    Intrepid::FieldContainer<double> blue_normal( space_dim );
-    Intrepid::FieldContainer<double> green_edge_nodes( 2, space_dim );
-    Intrepid::FieldContainer<double> green_edge_node_normals( 2, space_dim );
-    Intrepid::FieldContainer<double> projected_blue_point( space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> blue_point( "blue_point", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> blue_normal( "blue_normal", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> green_edge_nodes( "green_edge_nodes", 2, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> green_edge_node_normals( "green_edge_node_normals", 2, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> projected_blue_point( "projected_blue_point", space_dim );
     bool has_projection = false;
     int green_node_id = -1;
 
@@ -1130,11 +1130,11 @@ TEUCHOS_UNIT_TEST( ProjectionPrimitives, linear_edge_edge_intersection_test )
 
     // Allocate Arrays.
     int space_dim = 3;
-    Intrepid::FieldContainer<double> edge_1( 2, space_dim );
-    Intrepid::FieldContainer<double> edge_2( 2, space_dim );
-    Intrepid::FieldContainer<double> edge_2_node_normals( 2, space_dim );
-    Intrepid::FieldContainer<double> edge_1_intersection( space_dim );
-    Intrepid::FieldContainer<double> edge_2_intersection( space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_1( "edge_1", 2, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_2( "edge_2", 2, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_2_node_normals( "edge_2_node_normals", 2, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_1_intersection( "edge_1_intersection", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_2_intersection( "edge_2_intersection", space_dim );
     bool has_intersection = false;
     int node_id_1;
     int node_id_2;
@@ -1819,11 +1819,11 @@ TEUCHOS_UNIT_TEST( ProjectionPrimitives, nonlinear_edge_edge_intersection_test )
 
     // Allocate Arrays.
     int space_dim = 3;
-    Intrepid::FieldContainer<double> edge_1( 2, space_dim );
-    Intrepid::FieldContainer<double> edge_2( 2, space_dim );
-    Intrepid::FieldContainer<double> edge_2_node_normals( 2, space_dim );
-    Intrepid::FieldContainer<double> edge_1_intersection( space_dim );
-    Intrepid::FieldContainer<double> edge_2_intersection( space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_1( "edge_1", 2, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_2( "edge_2", 2, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_2_node_normals( "edge_2_node_normals", 2, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_1_intersection( "edge_1_intersection", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_2_intersection( "edge_2_intersection", space_dim );
     int node_id_1;
     int node_id_2;
     bool has_intersection = false;
@@ -2329,11 +2329,11 @@ TEUCHOS_UNIT_TEST( ProjectionPrimitives, edge_edge_intersection_test_2 )
     parameters.set<double>( "Merge Tolerance", epsilon );
 
     int space_dim = 3;
-    Intrepid::FieldContainer<double> edge_1( 2, space_dim );
-    Intrepid::FieldContainer<double> edge_2( 2, space_dim );
-    Intrepid::FieldContainer<double> edge_2_node_normals( 2, space_dim );
-    Intrepid::FieldContainer<double> edge_1_intersection( space_dim );
-    Intrepid::FieldContainer<double> edge_2_intersection( space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_1( "edge_1", 2, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_2( "edge_2", 2, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_2_node_normals( "edge_2_node_normals", 2, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_1_intersection( "edge_1_intersection", space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> edge_2_intersection( "edge_2_intersection", space_dim );
     int node_id_1;
     int node_id_2;
 

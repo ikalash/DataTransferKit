@@ -51,7 +51,7 @@
 
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -102,7 +102,7 @@ class STKMeshHelpers
      * \brief Given a STK entity, return the coordinates of its nodes in a
      * field container ordered by canonical node order (C,N,D).
      */
-    static Intrepid::FieldContainer<double> getEntityNodeCoordinates(
+    static Kokkos::DynRankView<double, Kokkos::HostSpace> getEntityNodeCoordinates(
         const Teuchos::Array<stk::mesh::Entity> &stk_entities,
         const stk::mesh::BulkData &bulk_data );
 
@@ -112,7 +112,7 @@ class STKMeshHelpers
      * field container ordered by canonical node order (C,N,D). Templated
      * extraction layer.
      */
-    static Intrepid::FieldContainer<double> extractEntityNodeCoordinates(
+    static Kokkos::DynRankView<double, Kokkos::HostSpace> extractEntityNodeCoordinates(
         const Teuchos::Array<stk::mesh::Entity> &stk_entities,
         const stk::mesh::BulkData &bulk_data, const int space_dim );
 };

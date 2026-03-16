@@ -44,7 +44,7 @@
 #include "DTK_STKMeshEntityImpl.hpp"
 #include "DTK_STKMeshHelpers.hpp"
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
@@ -104,17 +104,17 @@ void STKMeshEntityImpl::boundingBox( Teuchos::Tuple<double, 6> &bounds ) const
 {
     DTK_REQUIRE( Teuchos::nonnull( d_bulk_data ) );
 
-    Intrepid::FieldContainer<double> node_coords =
+    Kokkos::DynRankView<double, Kokkos::HostSpace> node_coords =
         STKMeshHelpers::getEntityNodeCoordinates(
             Teuchos::Array<stk::mesh::Entity>( 1, d_extra_data->d_stk_entity ),
             *d_bulk_data );
     DTK_CHECK( node_coords.rank() == 3 );
-    DTK_CHECK( node_coords.dimension( 0 ) == 1 );
+    DTK_CHECK( node_coords.extent_int( 0 ) == 1 );
 
     double max = std::numeric_limits<double>::max();
     bounds = Teuchos::tuple( max, max, max, -max, -max, -max );
-    int space_dim = node_coords.dimension( 2 );
-    for ( int n = 0; n < node_coords.dimension( 1 ); ++n )
+    int space_dim = node_coords.extent_int( 2 );
+    for ( int n = 0; n < node_coords.extent_int( 1 ); ++n )
     {
         for ( int d = 0; d < space_dim; ++d )
         {
@@ -173,12 +173,12 @@ void STKMeshEntityImpl::describe(
     shards::CellTopology topo = STKMeshHelpers::getShardsTopology(
         d_extra_data->d_stk_entity, *d_bulk_data );
 
-    Intrepid::FieldContainer<double> node_coords =
+    Kokkos::DynRankView<double, Kokkos::HostSpace> node_coords =
         STKMeshHelpers::getEntityNodeCoordinates(
             Teuchos::Array<stk::mesh::Entity>( 1, d_extra_data->d_stk_entity ),
             *d_bulk_data );
-    int num_node = node_coords.dimension( 1 );
-    int space_dim = node_coords.dimension( 2 );
+    int num_node = node_coords.extent_int( 1 );
+    int space_dim = node_coords.extent_int( 2 );
 
     out << std::endl;
     out << "---" << std::endl;

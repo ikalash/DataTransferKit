@@ -68,7 +68,7 @@ ReferenceHexImpl::ReferenceHexImpl(
     // Get the element node coordinates.
     Teuchos::Tuple<double, 6> node_bounds;
     auto &coords = d_extra_data->node_coords;
-    coords.resize( 1, 8, 3 );
+    Kokkos::resize( coords, 1, 8, 3 );
     for ( int n = 0; n < 8; ++n )
     {
         nodes[n].boundingBox( node_bounds );

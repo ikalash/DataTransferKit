@@ -56,7 +56,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
-#include "Intrepid_FieldContainer.hpp"
+#include <Kokkos_DynRankView.hpp>
 
 //---------------------------------------------------------------------------//
 // HELPER FUNCTIONS
@@ -78,8 +78,8 @@ Teuchos::RCP<const Teuchos::Comm<int>> getDefaultComm()
 class ScalarNonlinearProblem
 {
   public:
-    typedef Intrepid::FieldContainer<double> md_array_type;
-    typedef md_array_type::scalar_type scalar_type;
+    typedef Kokkos::DynRankView<double, Kokkos::HostSpace> md_array_type;
+    typedef md_array_type::value_type scalar_type;
 
     ScalarNonlinearProblem( const double a )
         : d_a( a )
@@ -111,7 +111,7 @@ class NonlinearProblemTraits<ScalarNonlinearProblem>
   public:
     typedef ScalarNonlinearProblem nonlinear_problem_type;
     typedef typename nonlinear_problem_type::md_array_type MDArray;
-    typedef typename nonlinear_problem_type::scalar_type Scalar;
+    typedef typename nonlinear_problem_type::Scalar Scalar;
 
     static inline void updateState( ScalarNonlinearProblem &problem,
                                     const MDArray &u )
@@ -138,8 +138,8 @@ class NonlinearProblemTraits<ScalarNonlinearProblem>
 class VectorNonlinearProblem
 {
   public:
-    typedef Intrepid::FieldContainer<double> md_array_type;
-    typedef md_array_type::scalar_type scalar_type;
+    typedef Kokkos::DynRankView<double, Kokkos::HostSpace> md_array_type;
+    typedef md_array_type::value_type scalar_type;
 
     VectorNonlinearProblem( const double a, const double b )
         : d_a( a )
@@ -177,7 +177,7 @@ class NonlinearProblemTraits<VectorNonlinearProblem>
   public:
     typedef VectorNonlinearProblem nonlinear_problem_type;
     typedef typename nonlinear_problem_type::md_array_type MDArray;
-    typedef typename nonlinear_problem_type::scalar_type Scalar;
+    typedef typename nonlinear_problem_type::Scalar Scalar;
 
     static inline void updateState( VectorNonlinearProblem &problem,
                                     const MDArray &u )
@@ -209,21 +209,21 @@ TEUCHOS_UNIT_TEST( NewtonSolver, scalar_test )
 
     double a_1 = 1.0;
     ScalarNonlinearProblem problem_1( a_1 );
-    Intrepid::FieldContainer<double> u_1( 1, 1 );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> u_1( "u_1", 1, 1 );
     solver.solve( u_1, problem_1, tolerance, max_iters );
     TEST_FLOATING_EQUALITY( u_1( 0, 0 ) * u_1( 0, 0 ) + u_1( 0, 0 ), a_1,
                             tolerance );
 
     double a_2 = 1830.31;
     ScalarNonlinearProblem problem_2( a_2 );
-    Intrepid::FieldContainer<double> u_2( 1, 1 );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> u_2( "u_2", 1, 1 );
     solver.solve( u_2, problem_2, tolerance, max_iters );
     TEST_FLOATING_EQUALITY( u_2( 0, 0 ) * u_2( 0, 0 ) + u_2( 0, 0 ), a_2,
                             tolerance );
 
     double a_3 = 0.0000231;
     ScalarNonlinearProblem problem_3( a_3 );
-    Intrepid::FieldContainer<double> u_3( 1, 1 );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> u_3( "u_3", 1, 1 );
     solver.solve( u_3, problem_3, tolerance, max_iters );
     TEST_FLOATING_EQUALITY( u_3( 0, 0 ) * u_3( 0, 0 ) + u_3( 0, 0 ), a_3,
                             tolerance );
@@ -239,7 +239,7 @@ TEUCHOS_UNIT_TEST( NewtonSolver, vector_test )
     double a_1 = 1.0;
     double b_1 = 1.0;
     VectorNonlinearProblem problem_1( a_1, b_1 );
-    Intrepid::FieldContainer<double> u_1( 1, 2 );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> u_1( "u_1", 1, 2 );
     solver.solve( u_1, problem_1, tolerance, max_iters );
     TEST_FLOATING_EQUALITY( u_1( 0, 0 ) * u_1( 0, 0 ) + u_1( 0, 1 ), a_1,
                             tolerance );
@@ -249,7 +249,7 @@ TEUCHOS_UNIT_TEST( NewtonSolver, vector_test )
     double a_2 = 483.20;
     double b_2 = 0.32;
     VectorNonlinearProblem problem_2( a_2, b_2 );
-    Intrepid::FieldContainer<double> u_2( 1, 2 );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> u_2( "u_2", 1, 2 );
     solver.solve( u_2, problem_2, tolerance, max_iters );
     TEST_FLOATING_EQUALITY( u_2( 0, 0 ) * u_2( 0, 0 ) + u_2( 0, 1 ), a_2,
                             tolerance );
@@ -259,7 +259,7 @@ TEUCHOS_UNIT_TEST( NewtonSolver, vector_test )
     double a_3 = 0.00322;
     double b_3 = 1.987;
     VectorNonlinearProblem problem_3( a_3, b_3 );
-    Intrepid::FieldContainer<double> u_3( 1, 2 );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> u_3( "u_3", 1, 2 );
     solver.solve( u_3, problem_3, tolerance, max_iters );
     TEST_FLOATING_EQUALITY( u_3( 0, 0 ) * u_3( 0, 0 ) + u_3( 0, 1 ), a_3,
                             tolerance );

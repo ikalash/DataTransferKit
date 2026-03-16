@@ -67,7 +67,7 @@
 
 #include <Tpetra_MultiVector.hpp>
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 

@@ -45,8 +45,8 @@
 
 #include <Teuchos_Array.hpp>
 
-#include <Intrepid_Cubature.hpp>
-#include <Intrepid_DefaultCubatureFactory.hpp>
+#include <Intrepid2_Cubature.hpp>
+#include <Intrepid2_DefaultCubatureFactory.hpp>
 
 namespace DataTransferKit
 {
@@ -85,11 +85,11 @@ class IntrepidIntegrationRule
 
   private:
     // Intrepid cubature factory.
-    mutable Intrepid::DefaultCubatureFactory<double> d_intrepid_factory;
+    mutable Intrepid2::DefaultCubatureFactory d_intrepid_factory;
 
     // Map of already created cubature rules.
     mutable std::map<std::pair<unsigned, int>,
-                     Teuchos::RCP<Intrepid::Cubature<double>>>
+                     Teuchos::RCP<Intrepid2::Cubature<Kokkos::HostSpace, double, double>>>
         d_cub_rules;
 };
 

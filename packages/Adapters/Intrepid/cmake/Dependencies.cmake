@@ -4,5 +4,5 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
     DataTransferKitInterface
     Teuchos
     Shards
-    Intrepid
+    Intrepid2
   )

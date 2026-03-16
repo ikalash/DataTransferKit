@@ -44,7 +44,7 @@
 #include "DTK_ProjectionPrimitives.hpp"
 #include "DTK_STKMeshHelpers.hpp"
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
@@ -86,7 +86,7 @@ double STKMeshEntityLocalMap::measure( const Entity &entity ) const
         STKMeshHelpers::getShardsTopology( stk_entity, *d_bulk_data );
 
     // Get the STK entity coordinates.
-    Intrepid::FieldContainer<double> entity_coords =
+    Kokkos::DynRankView<double, Kokkos::HostSpace> entity_coords =
         STKMeshHelpers::getEntityNodeCoordinates(
             Teuchos::Array<stk::mesh::Entity>( 1, stk_entity ), *d_bulk_data );
 
@@ -129,7 +129,7 @@ void STKMeshEntityLocalMap::centroid(
     {
         shards::CellTopology entity_topo =
             STKMeshHelpers::getShardsTopology( stk_entity, *d_bulk_data );
-        Intrepid::FieldContainer<double> entity_coords =
+        Kokkos::DynRankView<double, Kokkos::HostSpace> entity_coords =
             STKMeshHelpers::getEntityNodeCoordinates(
                 Teuchos::Array<stk::mesh::Entity>( 1, stk_entity ),
                 *d_bulk_data );
@@ -146,11 +146,15 @@ void STKMeshEntityLocalMap::centroid(
     // The centroid of a node is the node coordinates.
     else if ( rank == stk::topology::NODE_RANK )
     {
-        Intrepid::FieldContainer<double> entity_coords =
+        Kokkos::DynRankView<double, Kokkos::HostSpace> entity_coords =
             STKMeshHelpers::getEntityNodeCoordinates(
                 Teuchos::Array<stk::mesh::Entity>( 1, stk_entity ),
                 *d_bulk_data );
-        centroid.assign( entity_coords.getData()() );
+        int sdim = entity_coords.extent_int( 2 );
+        for ( int d = 0; d < sdim; ++d )
+        {
+            centroid[d] = entity_coords( 0, 0, d );
+        }
     }
 
     // Check for unsupported ranks.
@@ -219,7 +223,7 @@ bool STKMeshEntityLocalMap::mapToReferenceFrame(
     {
         shards::CellTopology entity_topo =
             STKMeshHelpers::getShardsTopology( stk_entity, *d_bulk_data );
-        Intrepid::FieldContainer<double> entity_coords =
+        Kokkos::DynRankView<double, Kokkos::HostSpace> entity_coords =
             STKMeshHelpers::getEntityNodeCoordinates(
                 Teuchos::Array<stk::mesh::Entity>( 1, stk_entity ),
                 *d_bulk_data );
@@ -303,7 +307,7 @@ void STKMeshEntityLocalMap::mapToPhysicalFrame(
     {
         shards::CellTopology entity_topo =
             STKMeshHelpers::getShardsTopology( stk_entity, *d_bulk_data );
-        Intrepid::FieldContainer<double> entity_coords =
+        Kokkos::DynRankView<double, Kokkos::HostSpace> entity_coords =
             STKMeshHelpers::getEntityNodeCoordinates(
                 Teuchos::Array<stk::mesh::Entity>( 1, stk_entity ),
                 *d_bulk_data );

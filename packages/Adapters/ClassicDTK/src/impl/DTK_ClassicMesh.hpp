@@ -55,7 +55,7 @@
 
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 namespace DataTransferKit
 {
@@ -123,7 +123,7 @@ class ClassicMesh
 
     // Given an element global id and its block id get the coordinates of the
     // element nodes.
-    Intrepid::FieldContainer<double>
+    Kokkos::DynRankView<double, Kokkos::HostSpace>
     getElementNodeCoordinates( const GlobalOrdinal gid,
                                const int block_id ) const;
 

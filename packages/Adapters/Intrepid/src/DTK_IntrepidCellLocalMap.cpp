@@ -44,7 +44,7 @@
 #include "DTK_IntrepidCell.hpp"
 #include "DTK_ProjectionPrimitives.hpp"
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 namespace DataTransferKit
 {
@@ -53,7 +53,7 @@ namespace DataTransferKit
 // for a 3D entity, area for 2D, and length for 1D).
 double IntrepidCellLocalMap::measure(
     const shards::CellTopology &entity_topo,
-    const Intrepid::FieldContainer<double> &entity_coords )
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &entity_coords )
 {
     // Get the Intrepid cell corresponding to the entity topology.
     IntrepidCell entity_cell( entity_topo, 1 );
@@ -62,7 +62,7 @@ double IntrepidCellLocalMap::measure(
     IntrepidCell::updateState( entity_cell, entity_coords );
 
     // Compute the measure of the cell.
-    Intrepid::FieldContainer<double> measure( 1 );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> measure( "measure", 1 );
     entity_cell.getCellMeasures( measure );
     return measure( 0 );
 }
@@ -71,7 +71,7 @@ double IntrepidCellLocalMap::measure(
 // Return the centroid of the entity.
 void IntrepidCellLocalMap::centroid(
     const shards::CellTopology &entity_topo,
-    const Intrepid::FieldContainer<double> &entity_coords,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &entity_coords,
     const Teuchos::ArrayView<double> &centroid )
 {
     // Get the Intrepid cell corresponding to the entity topology.
@@ -79,17 +79,21 @@ void IntrepidCellLocalMap::centroid(
     entity_cell.setCellNodeCoordinates( entity_coords );
 
     // Get the reference center of the cell.
-    Intrepid::FieldContainer<double> ref_center( 1,
-                                                 entity_coords.dimension( 2 ) );
+    int sdim = entity_coords.extent_int( 2 );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> ref_center(
+        "ref_center", 1, sdim );
     ProjectionPrimitives::referenceCellCenter( entity_topo, ref_center );
 
     // Map the cell center to the physical frame.
-    Intrepid::FieldContainer<double> phys_center(
-        1, 1, entity_coords.dimension( 2 ) );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> phys_center(
+        "phys_center", 1, 1, sdim );
     entity_cell.mapToCellPhysicalFrame( ref_center, phys_center );
 
     // Extract the centroid coordinates.
-    centroid.assign( phys_center.getData()() );
+    for ( int d = 0; d < sdim; ++d )
+    {
+        centroid[d] = phys_center( 0, 0, d );
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -97,7 +101,7 @@ void IntrepidCellLocalMap::centroid(
 // point.
 bool IntrepidCellLocalMap::mapToReferenceFrame(
     const shards::CellTopology &entity_topo,
-    const Intrepid::FieldContainer<double> &entity_coords,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &entity_coords,
     const Teuchos::ArrayView<const double> &point,
     const Teuchos::ArrayView<double> &reference_point )
 {
@@ -106,14 +110,20 @@ bool IntrepidCellLocalMap::mapToReferenceFrame(
     entity_cell.setCellNodeCoordinates( entity_coords );
 
     // Map the point to the reference frame of the cell.
-    Teuchos::Array<int> array_dims( 2 );
-    array_dims[0] = 1;
-    array_dims[1] = entity_coords.dimension( 2 );
-    Intrepid::FieldContainer<double> point_container(
-        array_dims, const_cast<double *>( point.getRawPtr() ) );
-    Intrepid::FieldContainer<double> ref_point_container(
-        array_dims, reference_point.getRawPtr() );
+    int sdim = entity_coords.extent_int( 2 );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> point_container(
+        "point_container", 1, sdim );
+    for ( int d = 0; d < sdim; ++d )
+    {
+        point_container( 0, d ) = point[d];
+    }
+    Kokkos::DynRankView<double, Kokkos::HostSpace> ref_point_container(
+        "ref_point_container", 1, sdim );
     entity_cell.mapToCellReferenceFrame( point_container, ref_point_container );
+    for ( int d = 0; d < sdim; ++d )
+    {
+        reference_point[d] = ref_point_container( 0, d );
+    }
 
     // Return true to indicate successful mapping. Catching Intrepid errors
     // and returning false is a possibility here.
@@ -131,11 +141,13 @@ bool IntrepidCellLocalMap::checkPointInclusion(
     IntrepidCell entity_cell( entity_topo, 1 );
 
     // Check point inclusion.
-    Teuchos::Array<int> array_dims( 2 );
-    array_dims[0] = 1;
-    array_dims[1] = reference_point.size();
-    Intrepid::FieldContainer<double> ref_point_container(
-        array_dims, const_cast<double *>( reference_point.getRawPtr() ) );
+    int sdim = reference_point.size();
+    Kokkos::DynRankView<double, Kokkos::HostSpace> ref_point_container(
+        "ref_point_container", 1, sdim );
+    for ( int d = 0; d < sdim; ++d )
+    {
+        ref_point_container( 0, d ) = reference_point[d];
+    }
     return entity_cell.pointInReferenceCell( ref_point_container, tolerance );
 }
 
@@ -143,7 +155,7 @@ bool IntrepidCellLocalMap::checkPointInclusion(
 // Map a reference point to the physical space of an entity.
 void IntrepidCellLocalMap::mapToPhysicalFrame(
     const shards::CellTopology &entity_topo,
-    const Intrepid::FieldContainer<double> &entity_coords,
+    const Kokkos::DynRankView<double, Kokkos::HostSpace> &entity_coords,
     const Teuchos::ArrayView<const double> &reference_point,
     const Teuchos::ArrayView<double> &point )
 {
@@ -152,18 +164,20 @@ void IntrepidCellLocalMap::mapToPhysicalFrame(
     entity_cell.setCellNodeCoordinates( entity_coords );
 
     // Map the reference point to the physical frame of the cell.
-    Teuchos::Array<int> ref_array_dims( 2 );
-    ref_array_dims[0] = 1;
-    ref_array_dims[1] = entity_coords.dimension( 2 );
-    Intrepid::FieldContainer<double> ref_point_container(
-        ref_array_dims, const_cast<double *>( reference_point.getRawPtr() ) );
-    Teuchos::Array<int> phys_array_dims( 3 );
-    phys_array_dims[0] = 1;
-    phys_array_dims[1] = 1;
-    phys_array_dims[2] = entity_coords.dimension( 2 );
-    Intrepid::FieldContainer<double> point_container( phys_array_dims,
-                                                      point.getRawPtr() );
+    int sdim = entity_coords.extent_int( 2 );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> ref_point_container(
+        "ref_point_container", 1, sdim );
+    for ( int d = 0; d < sdim; ++d )
+    {
+        ref_point_container( 0, d ) = reference_point[d];
+    }
+    Kokkos::DynRankView<double, Kokkos::HostSpace> point_container(
+        "point_container", 1, 1, sdim );
     entity_cell.mapToCellPhysicalFrame( ref_point_container, point_container );
+    for ( int d = 0; d < sdim; ++d )
+    {
+        point[d] = point_container( 0, 0, d );
+    }
 }
 
 //---------------------------------------------------------------------------//

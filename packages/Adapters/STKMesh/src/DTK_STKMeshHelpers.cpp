@@ -200,7 +200,7 @@ STKMeshHelpers::getShardsTopology( const stk::mesh::Entity stk_entity,
 //---------------------------------------------------------------------------//
 // Extract the coordinates of multiple entities and return an array ordered as
 // (C,N,D).
-Intrepid::FieldContainer<double> STKMeshHelpers::extractEntityNodeCoordinates(
+Kokkos::DynRankView<double, Kokkos::HostSpace> STKMeshHelpers::extractEntityNodeCoordinates(
     const Teuchos::Array<stk::mesh::Entity> &stk_entities,
     const stk::mesh::BulkData &bulk_data, const int space_dim )
 {
@@ -231,7 +231,7 @@ Intrepid::FieldContainer<double> STKMeshHelpers::extractEntityNodeCoordinates(
             num_nodes = std::distance( begin, end );
         }
     }
-    Intrepid::FieldContainer<double> coords( num_cells, num_nodes, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> coords( "coords", num_cells, num_nodes, space_dim );
 
     // Extract the coordinates.
     double *node_coords = 0;
@@ -274,7 +274,7 @@ Intrepid::FieldContainer<double> STKMeshHelpers::extractEntityNodeCoordinates(
 //---------------------------------------------------------------------------//
 // Given a set of STK entities, return the coordinates of its nodes in a field
 // container ordered by canonical node order (N,D).
-Intrepid::FieldContainer<double> STKMeshHelpers::getEntityNodeCoordinates(
+Kokkos::DynRankView<double, Kokkos::HostSpace> STKMeshHelpers::getEntityNodeCoordinates(
     const Teuchos::Array<stk::mesh::Entity> &stk_entities,
     const stk::mesh::BulkData &bulk_data )
 {

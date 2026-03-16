@@ -49,8 +49,8 @@
 
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_Basis.hpp>
-#include <Intrepid_FieldContainer.hpp>
+#include <Intrepid2_Basis.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 namespace DataTransferKit
 {
@@ -65,42 +65,42 @@ class ProjectPointToFaceNonlinearProblem
 {
   public:
     //! Multidimensional array typedefs.
-    typedef Intrepid::FieldContainer<double> md_array_type;
-    typedef typename Intrepid::FieldContainer<double>::scalar_type Scalar;
+    typedef Kokkos::DynRankView<double, Kokkos::HostSpace> md_array_type;
+    typedef typename Kokkos::DynRankView<double, Kokkos::HostSpace>::value_type Scalar;
 
     // Constructor.
     ProjectPointToFaceNonlinearProblem(
         const Teuchos::RCP<
-            Intrepid::Basis<Scalar, Intrepid::FieldContainer<double>>>
+            Intrepid2::Basis<Kokkos::HostSpace, double, double>>
             &face_basis,
-        const Intrepid::FieldContainer<double> &point,
-        const Intrepid::FieldContainer<double> &face_nodes,
-        const Intrepid::FieldContainer<double> &face_node_normals );
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &point,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_nodes,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_node_normals );
 
     //! Update the state of the problem given the new solution vector.
-    void updateState( const Intrepid::FieldContainer<double> &u );
+    void updateState( const Kokkos::DynRankView<double, Kokkos::HostSpace> &u );
 
     // Evaluate the nonlinear residual.
-    void evaluateResidual( const Intrepid::FieldContainer<double> &u,
-                           Intrepid::FieldContainer<double> &F ) const;
+    void evaluateResidual( const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+                           Kokkos::DynRankView<double, Kokkos::HostSpace> &F ) const;
 
     // Evaluate the jacobian.
-    void evaluateJacobian( const Intrepid::FieldContainer<double> &u,
-                           Intrepid::FieldContainer<double> &J ) const;
+    void evaluateJacobian( const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+                           Kokkos::DynRankView<double, Kokkos::HostSpace> &J ) const;
 
   public:
     // Basis of the face we are projecting to.
-    Teuchos::RCP<Intrepid::Basis<Scalar, Intrepid::FieldContainer<double>>>
+    Teuchos::RCP<Intrepid2::Basis<Kokkos::HostSpace, double, double>>
         d_face_basis;
 
     // Point coordinates to be projected.
-    Intrepid::FieldContainer<double> d_point;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_point;
 
     // Physical coordinates of the face nodes.
-    Intrepid::FieldContainer<double> d_face_nodes;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_face_nodes;
 
     // Normal vectors of the face nodes.
-    Intrepid::FieldContainer<double> d_face_node_normals;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_face_node_normals;
 
     // Spatial dimension.
     int d_space_dim;
@@ -112,13 +112,13 @@ class ProjectPointToFaceNonlinearProblem
     int d_cardinality;
 
     // Face basis evaluations.
-    Intrepid::FieldContainer<double> d_basis_evals;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_basis_evals;
 
     // Face basis gradient evalations.
-    Intrepid::FieldContainer<double> d_grad_evals;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_grad_evals;
 
     // Evaluation points in natural coordinates.
-    Intrepid::FieldContainer<double> d_eval_points;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_eval_points;
 
 }; // end ProjectToFaceNonlinearProblem
 
@@ -136,23 +136,23 @@ class NonlinearProblemTraits<ProjectPointToFaceNonlinearProblem>
     typedef typename nonlinear_problem_type::Scalar Scalar;
 
     static inline void updateState( nonlinear_problem_type &problem,
-                                    const Intrepid::FieldContainer<double> &u )
+                                    const Kokkos::DynRankView<double, Kokkos::HostSpace> &u )
     {
         problem.updateState( u );
     }
 
     static inline void
     evaluateResidual( const nonlinear_problem_type &problem,
-                      const Intrepid::FieldContainer<double> &u,
-                      Intrepid::FieldContainer<double> &F )
+                      const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+                      Kokkos::DynRankView<double, Kokkos::HostSpace> &F )
     {
         problem.evaluateResidual( u, F );
     }
 
     static inline void
     evaluateJacobian( const nonlinear_problem_type &problem,
-                      const Intrepid::FieldContainer<double> &u,
-                      Intrepid::FieldContainer<double> &J )
+                      const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+                      Kokkos::DynRankView<double, Kokkos::HostSpace> &J )
     {
         problem.evaluateJacobian( u, J );
     }
@@ -170,38 +170,38 @@ class PointInFaceVolumeOfInfluenceNonlinearProblem
 {
   public:
     //! Multidimensional array typedefs.
-    typedef Intrepid::FieldContainer<double> md_array_type;
-    typedef typename Intrepid::FieldContainer<double>::scalar_type Scalar;
+    typedef Kokkos::DynRankView<double, Kokkos::HostSpace> md_array_type;
+    typedef typename Kokkos::DynRankView<double, Kokkos::HostSpace>::value_type Scalar;
 
     // Constructor.
     PointInFaceVolumeOfInfluenceNonlinearProblem(
-        const Intrepid::FieldContainer<double> &point,
-        const Intrepid::FieldContainer<double> &face_edge_nodes,
-        const Intrepid::FieldContainer<double> &face_edge_node_normals,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &point,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_edge_nodes,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &face_edge_node_normals,
         const double c );
 
     // Update the state of the problem given the new solution vector.
-    void updateState( const Intrepid::FieldContainer<double> &u );
+    void updateState( const Kokkos::DynRankView<double, Kokkos::HostSpace> &u );
 
     // Evaluate the nonlinear residual.
-    void evaluateResidual( const Intrepid::FieldContainer<double> &u,
-                           Intrepid::FieldContainer<double> &F ) const;
+    void evaluateResidual( const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+                           Kokkos::DynRankView<double, Kokkos::HostSpace> &F ) const;
 
     // Evaluate the jacobian.
-    void evaluateJacobian( const Intrepid::FieldContainer<double> &u,
-                           Intrepid::FieldContainer<double> &J ) const;
+    void evaluateJacobian( const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+                           Kokkos::DynRankView<double, Kokkos::HostSpace> &J ) const;
 
   public:
     // Point to check for inclusion in the volume of influence.
-    Intrepid::FieldContainer<double> d_point;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_point;
 
     // Physical coordinates of the nodes constructing the edge of the face
     // we are currently checking.
-    Intrepid::FieldContainer<double> d_face_edge_nodes;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_face_edge_nodes;
 
     // Normal vectors of the nodes constructing the edge of the face that
     // we are currently checking.
-    Intrepid::FieldContainer<double> d_face_edge_node_normals;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_face_edge_node_normals;
 
     // Scale factor.
     double d_c;
@@ -216,19 +216,19 @@ class PointInFaceVolumeOfInfluenceNonlinearProblem
     int d_cardinality;
 
     // Psuedo-face basis evaluations.
-    Intrepid::FieldContainer<double> d_basis_evals;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_basis_evals;
 
     // Psuedo-face basis gradient evaluations.
-    Intrepid::FieldContainer<double> d_grad_evals;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_grad_evals;
 
     // Psuedo-face basis projection natural coordinates.
-    Intrepid::FieldContainer<double> d_eval_points;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_eval_points;
 
     // Current projection normal direction.
-    Intrepid::FieldContainer<double> d_proj_normal;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_proj_normal;
 
     // Extra nodes constructing the pseudo-face.
-    Intrepid::FieldContainer<double> d_face_normal_nodes;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_face_normal_nodes;
 
 }; // end PointInFaceVolumeOfInfluenceNonlinearProblem
 
@@ -246,23 +246,23 @@ class NonlinearProblemTraits<PointInFaceVolumeOfInfluenceNonlinearProblem>
     typedef typename nonlinear_problem_type::Scalar Scalar;
 
     static inline void updateState( nonlinear_problem_type &problem,
-                                    const Intrepid::FieldContainer<double> &u )
+                                    const Kokkos::DynRankView<double, Kokkos::HostSpace> &u )
     {
         problem.updateState( u );
     }
 
     static inline void
     evaluateResidual( const nonlinear_problem_type &problem,
-                      const Intrepid::FieldContainer<double> &u,
-                      Intrepid::FieldContainer<double> &F )
+                      const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+                      Kokkos::DynRankView<double, Kokkos::HostSpace> &F )
     {
         problem.evaluateResidual( u, F );
     }
 
     static inline void
     evaluateJacobian( const nonlinear_problem_type &problem,
-                      const Intrepid::FieldContainer<double> &u,
-                      Intrepid::FieldContainer<double> &J )
+                      const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+                      Kokkos::DynRankView<double, Kokkos::HostSpace> &J )
     {
         problem.evaluateJacobian( u, J );
     }
@@ -279,39 +279,39 @@ class ProjectPointFeatureToEdgeFeatureNonlinearProblem
 {
   public:
     //! Multidimensional array typedefs.
-    typedef Intrepid::FieldContainer<double> md_array_type;
-    typedef typename Intrepid::FieldContainer<double>::scalar_type Scalar;
+    typedef Kokkos::DynRankView<double, Kokkos::HostSpace> md_array_type;
+    typedef typename Kokkos::DynRankView<double, Kokkos::HostSpace>::value_type Scalar;
 
     // Constructor.
     ProjectPointFeatureToEdgeFeatureNonlinearProblem(
-        const Intrepid::FieldContainer<double> &point,
-        const Intrepid::FieldContainer<double> &edge_nodes,
-        const Intrepid::FieldContainer<double> &edge_node_normals,
-        const Intrepid::FieldContainer<double> &edge_node_binormals );
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &point,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &edge_nodes,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &edge_node_normals,
+        const Kokkos::DynRankView<double, Kokkos::HostSpace> &edge_node_binormals );
 
     // Update the state of the problem given the new solution vector.
-    void updateState( const Intrepid::FieldContainer<double> &u );
+    void updateState( const Kokkos::DynRankView<double, Kokkos::HostSpace> &u );
 
     // Evaluate the nonlinear residual.
-    void evaluateResidual( const Intrepid::FieldContainer<double> &u,
-                           Intrepid::FieldContainer<double> &F ) const;
+    void evaluateResidual( const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+                           Kokkos::DynRankView<double, Kokkos::HostSpace> &F ) const;
 
     // Evaluate the jacobian.
-    void evaluateJacobian( const Intrepid::FieldContainer<double> &u,
-                           Intrepid::FieldContainer<double> &J ) const;
+    void evaluateJacobian( const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+                           Kokkos::DynRankView<double, Kokkos::HostSpace> &J ) const;
 
   public:
     // point to project.
-    Intrepid::FieldContainer<double> d_point;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_point;
 
     // Coordinates of the edge nodes.
-    Intrepid::FieldContainer<double> d_edge_nodes;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_edge_nodes;
 
     // Normal vectors of the edge nodes.
-    Intrepid::FieldContainer<double> d_edge_node_normals;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_edge_node_normals;
 
     // Binormal vectors of the edge nodes.
-    Intrepid::FieldContainer<double> d_edge_node_binormals;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> d_edge_node_binormals;
 
     // Spatial dimension.
     int d_space_dim;
@@ -333,23 +333,23 @@ class NonlinearProblemTraits<ProjectPointFeatureToEdgeFeatureNonlinearProblem>
     typedef typename nonlinear_problem_type::Scalar Scalar;
 
     static inline void updateState( nonlinear_problem_type &problem,
-                                    const Intrepid::FieldContainer<double> &u )
+                                    const Kokkos::DynRankView<double, Kokkos::HostSpace> &u )
     {
         problem.updateState( u );
     }
 
     static inline void
     evaluateResidual( const nonlinear_problem_type &problem,
-                      const Intrepid::FieldContainer<double> &u,
-                      Intrepid::FieldContainer<double> &F )
+                      const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+                      Kokkos::DynRankView<double, Kokkos::HostSpace> &F )
     {
         problem.evaluateResidual( u, F );
     }
 
     static inline void
     evaluateJacobian( const nonlinear_problem_type &problem,
-                      const Intrepid::FieldContainer<double> &u,
-                      Intrepid::FieldContainer<double> &J )
+                      const Kokkos::DynRankView<double, Kokkos::HostSpace> &u,
+                      Kokkos::DynRankView<double, Kokkos::HostSpace> &J )
     {
         problem.evaluateJacobian( u, J );
     }

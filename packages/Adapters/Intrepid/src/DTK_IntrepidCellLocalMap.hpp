@@ -47,7 +47,7 @@
 
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 namespace DataTransferKit
 {
@@ -69,7 +69,7 @@ class IntrepidCellLocalMap
      */
     static double
     measure( const shards::CellTopology &entity_topo,
-             const Intrepid::FieldContainer<double> &entity_coords );
+             const Kokkos::DynRankView<double, Kokkos::HostSpace> &entity_coords );
 
     /*!
      * \brief Return the centroid of the entity.
@@ -77,7 +77,7 @@ class IntrepidCellLocalMap
      * be allocated. Assign a view of your centroid to this view.
      */
     static void centroid( const shards::CellTopology &entity_topo,
-                          const Intrepid::FieldContainer<double> &entity_coords,
+                          const Kokkos::DynRankView<double, Kokkos::HostSpace> &entity_coords,
                           const Teuchos::ArrayView<double> &centroid );
 
     /*!
@@ -95,7 +95,7 @@ class IntrepidCellLocalMap
      */
     static bool
     mapToReferenceFrame( const shards::CellTopology &entity_topo,
-                         const Intrepid::FieldContainer<double> &entity_coords,
+                         const Kokkos::DynRankView<double, Kokkos::HostSpace> &entity_coords,
                          const Teuchos::ArrayView<const double> &point,
                          const Teuchos::ArrayView<double> &reference_point );
 
@@ -124,7 +124,7 @@ class IntrepidCellLocalMap
      */
     static void
     mapToPhysicalFrame( const shards::CellTopology &entity_topo,
-                        const Intrepid::FieldContainer<double> &entity_coords,
+                        const Kokkos::DynRankView<double, Kokkos::HostSpace> &entity_coords,
                         const Teuchos::ArrayView<const double> &reference_point,
                         const Teuchos::ArrayView<double> &point );
 };

@@ -44,10 +44,10 @@
 
 #include <Teuchos_as.hpp>
 
-#include <Intrepid_CellTools.hpp>
-#include <Intrepid_DefaultCubatureFactory.hpp>
-#include <Intrepid_FunctionSpaceTools.hpp>
-#include <Intrepid_Types.hpp>
+#include <Intrepid2_CellTools.hpp>
+#include <Intrepid2_DefaultCubatureFactory.hpp>
+#include <Intrepid2_FunctionSpaceTools.hpp>
+#include <Intrepid2_Types.hpp>
 
 namespace DataTransferKit
 {
@@ -58,21 +58,21 @@ namespace DataTransferKit
 IntrepidCell::IntrepidCell( const shards::CellTopology &cell_topology,
                             const unsigned degree )
     : d_topology( cell_topology )
-    , d_cub_points( 0, 0 )
-    , d_cub_weights( 0 )
-    , d_jacobian( 0, 0, 0, 0 )
-    , d_jacobian_det( 0, 0 )
-    , d_weighted_measures( 0, 0 )
-    , d_physical_ip_coordinates( 0, 0, 0 )
+    , d_cub_points( "d_cub_points" )
+    , d_cub_weights( "d_cub_weights" )
+    , d_jacobian( "d_jacobian" )
+    , d_jacobian_det( "d_jacobian_det" )
+    , d_weighted_measures( "d_weighted_measures" )
+    , d_physical_ip_coordinates( "d_physical_ip_coordinates" )
 {
-    Intrepid::DefaultCubatureFactory<Scalar, MDArray> cub_factory;
-    d_cubature = cub_factory.create( d_topology, degree );
+    Intrepid2::DefaultCubatureFactory cub_factory;
+    d_cubature = cub_factory.create<Kokkos::HostSpace, double, double>( d_topology, degree );
 
     unsigned num_cub_points = d_cubature->getNumPoints();
     unsigned cub_dim = cell_topology.getDimension();
 
-    d_cub_points.resize( num_cub_points, cub_dim );
-    d_cub_weights.resize( num_cub_points );
+    Kokkos::resize(d_cub_points, num_cub_points, cub_dim);
+    Kokkos::resize(d_cub_weights, num_cub_points);
     d_cubature->getCubature( d_cub_points, d_cub_weights );
 }
 
@@ -103,15 +103,15 @@ void IntrepidCell::allocateCellState( const MDArray &cell_node_coords )
     setCellNodeCoordinates( cell_node_coords );
 
     // Get required dimensions.
-    int num_cells = d_cell_node_coords.dimension( 0 );
-    int num_ip = d_cub_points.dimension( 0 );
-    int space_dim = d_cub_points.dimension( 1 );
+    int num_cells = d_cell_node_coords.extent_int( 0 );
+    int num_ip = d_cub_points.extent_int( 0 );
+    int space_dim = d_cub_points.extent_int( 1 );
 
     // Resize arrays.
-    d_jacobian.resize( num_cells, num_ip, space_dim, space_dim );
-    d_jacobian_det.resize( num_cells, num_ip );
-    d_weighted_measures.resize( num_cells, num_ip );
-    d_physical_ip_coordinates.resize( num_cells, num_ip, space_dim );
+    Kokkos::resize(d_jacobian, num_cells, num_ip, space_dim, space_dim);
+    Kokkos::resize(d_jacobian_det, num_cells, num_ip);
+    Kokkos::resize(d_weighted_measures, num_cells, num_ip);
+    Kokkos::resize(d_physical_ip_coordinates, num_cells, num_ip, space_dim);
 }
 
 //---------------------------------------------------------------------------//
@@ -122,18 +122,18 @@ void IntrepidCell::allocateCellState( const MDArray &cell_node_coords )
 void IntrepidCell::updateCellState()
 {
     // Compute the Jacobian.
-    Intrepid::CellTools<Scalar>::setJacobian( d_jacobian, d_cub_points,
+    Intrepid2::CellTools<Kokkos::HostSpace>::setJacobian( d_jacobian, d_cub_points,
                                               d_cell_node_coords, d_topology );
 
     // Compute the determinant of the Jacobian.
-    Intrepid::CellTools<Scalar>::setJacobianDet( d_jacobian_det, d_jacobian );
+    Intrepid2::CellTools<Kokkos::HostSpace>::setJacobianDet( d_jacobian_det, d_jacobian );
 
     // Compute the cell measures.
-    Intrepid::FunctionSpaceTools::computeCellMeasure<Scalar>(
+    Intrepid2::FunctionSpaceTools<Kokkos::HostSpace>::computeCellMeasure(
         d_weighted_measures, d_jacobian_det, d_cub_weights );
 
     // Compute physical frame integration point coordinates.
-    Intrepid::CellTools<Scalar>::mapToPhysicalFrame(
+    Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(
         d_physical_ip_coordinates, d_cub_points, d_cell_node_coords,
         d_topology );
 }
@@ -160,8 +160,8 @@ void IntrepidCell::mapToCellReferenceFrame( const MDArray &physical_coords,
 {
     DTK_REQUIRE( 2 == physical_coords.rank() );
     DTK_REQUIRE( 2 == reference_coords.rank() );
-    Intrepid::CellTools<Scalar>::mapToReferenceFrame(
-        reference_coords, physical_coords, d_cell_node_coords, d_topology, 0 );
+    Intrepid2::CellTools<Kokkos::HostSpace>::mapToReferenceFrame(
+        reference_coords, physical_coords, d_cell_node_coords, d_topology );
 }
 
 //---------------------------------------------------------------------------//
@@ -174,16 +174,16 @@ void IntrepidCell::mapToCellPhysicalFrame( const MDArray &parametric_coords,
 {
     DTK_REQUIRE( 2 == parametric_coords.rank() );
     DTK_REQUIRE( 3 == physical_coords.rank() );
-    DTK_REQUIRE( parametric_coords.dimension( 1 ) ==
+    DTK_REQUIRE( parametric_coords.extent_int( 1 ) ==
                  Teuchos::as<int>( d_topology.getDimension() ) );
-    DTK_REQUIRE( physical_coords.dimension( 0 ) ==
-                 d_cell_node_coords.dimension( 0 ) );
-    DTK_REQUIRE( physical_coords.dimension( 1 ) ==
-                 parametric_coords.dimension( 0 ) );
-    DTK_REQUIRE( physical_coords.dimension( 2 ) ==
+    DTK_REQUIRE( physical_coords.extent_int( 0 ) ==
+                 d_cell_node_coords.extent_int( 0 ) );
+    DTK_REQUIRE( physical_coords.extent_int( 1 ) ==
+                 parametric_coords.extent_int( 0 ) );
+    DTK_REQUIRE( physical_coords.extent_int( 2 ) ==
                  Teuchos::as<int>( d_topology.getDimension() ) );
 
-    Intrepid::CellTools<Scalar>::mapToPhysicalFrame(
+    Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(
         physical_coords, parametric_coords, d_cell_node_coords, d_topology );
 }
 
@@ -195,8 +195,15 @@ void IntrepidCell::mapToCellPhysicalFrame( const MDArray &parametric_coords,
 bool IntrepidCell::pointInReferenceCell( const MDArray &reference_point,
                                          const double tolerance )
 {
-    return Intrepid::CellTools<Scalar>::checkPointsetInclusion(
-        reference_point, d_topology, tolerance );
+    // Intrepid2 checkPointInclusion expects a rank-1 point view.
+    int sdim = reference_point.extent_int( 1 );
+    Kokkos::DynRankView<Scalar, Kokkos::HostSpace> point( "point", sdim );
+    for ( int d = 0; d < sdim; ++d )
+    {
+        point( d ) = reference_point( 0, d );
+    }
+    return Intrepid2::CellTools<Kokkos::HostSpace>::checkPointInclusion(
+        point, d_topology, tolerance );
 }
 
 //---------------------------------------------------------------------------//
@@ -207,8 +214,8 @@ bool IntrepidCell::pointInReferenceCell( const MDArray &reference_point,
 bool IntrepidCell::pointInPhysicalCell( const MDArray &point,
                                         const double tolerance )
 {
-    MDArray reference_point( point );
-    reference_point.initialize();
+    MDArray reference_point("reference_point", point.extent_int(0), point.extent_int(1));
+    Kokkos::deep_copy(reference_point, 0.0);
     mapToCellReferenceFrame( point, reference_point );
     return pointInReferenceCell( reference_point, tolerance );
 }
@@ -219,7 +226,7 @@ bool IntrepidCell::pointInPhysicalCell( const MDArray &point,
  */
 int IntrepidCell::getNumCells() const
 {
-    return d_weighted_measures.dimension( 0 );
+    return d_weighted_measures.extent_int( 0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -228,7 +235,7 @@ int IntrepidCell::getNumCells() const
  */
 int IntrepidCell::getNumIntegrationPoints() const
 {
-    return d_cub_points.dimension( 0 );
+    return d_cub_points.extent_int( 0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -237,7 +244,7 @@ int IntrepidCell::getNumIntegrationPoints() const
  */
 int IntrepidCell::getSpatialDimension() const
 {
-    return d_cub_points.dimension( 1 );
+    return d_cub_points.extent_int( 1 );
 }
 
 //---------------------------------------------------------------------------//
@@ -248,12 +255,12 @@ int IntrepidCell::getSpatialDimension() const
 void IntrepidCell::getCellMeasures( MDArray &cell_measures ) const
 {
     DTK_REQUIRE( 1 == cell_measures.rank() );
-    DTK_REQUIRE( cell_measures.dimension( 0 ) ==
-                 d_weighted_measures.dimension( 0 ) );
+    DTK_REQUIRE( cell_measures.extent_int( 0 ) ==
+                 d_weighted_measures.extent_int( 0 ) );
 
-    MDArray dofs( d_cell_node_coords.dimension( 0 ),
-                  d_cub_weights.dimension( 0 ) );
-    dofs.initialize( 1.0 );
+    MDArray dofs( "dofs", d_cell_node_coords.extent_int( 0 ),
+                  d_cub_weights.extent_int( 0 ) );
+    Kokkos::deep_copy(dofs, 1.0);
     integrate( dofs, cell_measures );
 }
 
@@ -275,8 +282,8 @@ void IntrepidCell::getPhysicalIntegrationCoordinates(
  */
 void IntrepidCell::integrate( const MDArray &dofs, MDArray &integrals ) const
 {
-    Intrepid::FunctionSpaceTools::integrate<Scalar>(
-        integrals, dofs, d_weighted_measures, Intrepid::COMP_BLAS );
+    Intrepid2::FunctionSpaceTools<Kokkos::HostSpace>::integrate(
+        integrals, dofs, d_weighted_measures );
 }
 
 //---------------------------------------------------------------------------//

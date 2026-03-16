@@ -43,9 +43,9 @@
 
 #include <Teuchos_as.hpp>
 
-#include <Intrepid_CellTools.hpp>
-#include <Intrepid_DefaultCubatureFactory.hpp>
-#include <Intrepid_FunctionSpaceTools.hpp>
+#include <Intrepid2_CellTools.hpp>
+#include <Intrepid2_DefaultCubatureFactory.hpp>
+#include <Intrepid2_FunctionSpaceTools.hpp>
 
 namespace DataTransferKit
 {
@@ -62,9 +62,9 @@ IntrepidSideCell::IntrepidSideCell( const shards::CellTopology &side_topology,
     , d_parent_topology( parent_topology )
 {
     // Map the side cubature points to the cell frame.
-    MDArray mapped_cub_points( this->d_cubature->getNumPoints(),
+    MDArray mapped_cub_points( "mapped_cub_points", this->d_cubature->getNumPoints(),
                                parent_topology.getDimension() );
-    Intrepid::CellTools<Scalar>::mapToReferenceSubcell(
+    Intrepid2::CellTools<Kokkos::HostSpace>::mapToReferenceSubcell(
         mapped_cub_points, this->d_cub_points, side_topology.getDimension(),
         d_side_id, d_parent_topology );
     this->d_cub_points = mapped_cub_points;
@@ -80,28 +80,32 @@ void IntrepidSideCell::updateCellState()
     unsigned space_dim = d_parent_topology.getDimension();
 
     // Compute the Jacobian.
-    Intrepid::CellTools<Scalar>::setJacobian(
+    Intrepid2::CellTools<Kokkos::HostSpace>::setJacobian(
         this->d_jacobian, this->d_cub_points, this->d_cell_node_coords,
         d_parent_topology );
 
     // Compute the cell side measures.
+    int num_cells = this->d_cell_node_coords.extent_int( 0 );
+    int num_ip = this->d_cub_points.extent_int( 0 );
     switch ( space_dim )
     {
     case 3:
     {
         // Face case.
-        Intrepid::FunctionSpaceTools::computeFaceMeasure<Scalar>(
+        MDArray scratch( "scratch", num_cells, num_ip, space_dim );
+        Intrepid2::FunctionSpaceTools<Kokkos::HostSpace>::computeFaceMeasure(
             this->d_weighted_measures, this->d_jacobian, this->d_cub_weights,
-            d_side_id, d_parent_topology );
+            d_side_id, d_parent_topology, scratch );
     }
     break;
 
     case 2:
     {
         // Edge case.
-        Intrepid::FunctionSpaceTools::computeEdgeMeasure<Scalar>(
+        MDArray scratch( "scratch", num_cells, num_ip, space_dim );
+        Intrepid2::FunctionSpaceTools<Kokkos::HostSpace>::computeEdgeMeasure(
             this->d_weighted_measures, this->d_jacobian, this->d_cub_weights,
-            d_side_id, d_parent_topology );
+            d_side_id, d_parent_topology, scratch );
     }
     break;
 
@@ -111,7 +115,7 @@ void IntrepidSideCell::updateCellState()
     }
 
     // Compute physical frame integration point coordinates.
-    Intrepid::CellTools<Scalar>::mapToPhysicalFrame(
+    Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(
         this->d_physical_ip_coordinates, this->d_cub_points,
         this->d_cell_node_coords, d_parent_topology );
 }
@@ -126,23 +130,23 @@ void IntrepidSideCell::mapToCellPhysicalFrame( const MDArray &parametric_coords,
 {
     DTK_REQUIRE( 2 == parametric_coords.rank() );
     DTK_REQUIRE( 3 == physical_coords.rank() );
-    DTK_REQUIRE( parametric_coords.dimension( 1 ) ==
+    DTK_REQUIRE( parametric_coords.extent_int( 1 ) ==
                  Teuchos::as<int>( this->d_topology.getDimension() ) );
-    DTK_REQUIRE( physical_coords.dimension( 0 ) ==
-                 this->d_cell_node_coords.dimension( 0 ) );
-    DTK_REQUIRE( physical_coords.dimension( 1 ) ==
-                 parametric_coords.dimension( 0 ) );
-    DTK_REQUIRE( physical_coords.dimension( 2 ) ==
+    DTK_REQUIRE( physical_coords.extent_int( 0 ) ==
+                 this->d_cell_node_coords.extent_int( 0 ) );
+    DTK_REQUIRE( physical_coords.extent_int( 1 ) ==
+                 parametric_coords.extent_int( 0 ) );
+    DTK_REQUIRE( physical_coords.extent_int( 2 ) ==
                  Teuchos::as<int>( d_parent_topology.getDimension() ) );
 
-    MDArray mapped_coords( parametric_coords.dimension( 0 ),
+    MDArray mapped_coords( "mapped_coords", parametric_coords.extent_int( 0 ),
                            d_parent_topology.getDimension() );
 
-    Intrepid::CellTools<Scalar>::mapToReferenceSubcell(
+    Intrepid2::CellTools<Kokkos::HostSpace>::mapToReferenceSubcell(
         mapped_coords, parametric_coords, this->d_topology.getDimension(),
         d_side_id, d_parent_topology );
 
-    Intrepid::CellTools<Scalar>::mapToPhysicalFrame(
+    Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(
         physical_coords, mapped_coords, this->d_cell_node_coords,
         d_parent_topology );
 }
@@ -155,7 +159,7 @@ void IntrepidSideCell::getPhysicalSideNormalsAtIntegrationPoints(
     MDArray &side_normals )
 {
     // Compute the normal at the integration points.
-    Intrepid::CellTools<Scalar>::getPhysicalSideNormals(
+    Intrepid2::CellTools<Kokkos::HostSpace>::getPhysicalSideNormals(
         side_normals, this->d_jacobian, d_side_id, d_parent_topology );
 }
 
@@ -167,16 +171,16 @@ void IntrepidSideCell::getPhysicalSideNormalsAtIntegrationPoints(
 void IntrepidSideCell::getPhysicalSideNormalsAtReferencePoint(
     const MDArray &parametric_coords, MDArray &side_normals )
 {
-    int num_cells = d_cell_node_coords.dimension( 0 );
-    int num_point = parametric_coords.dimension( 0 );
-    int space_dim = parametric_coords.dimension( 1 );
-    MDArray jacobian( num_cells, num_point, space_dim, space_dim );
+    int num_cells = d_cell_node_coords.extent_int( 0 );
+    int num_point = parametric_coords.extent_int( 0 );
+    int space_dim = parametric_coords.extent_int( 1 );
+    MDArray jacobian( "jacobian", num_cells, num_point, space_dim, space_dim );
 
-    Intrepid::CellTools<Scalar>::setJacobian( d_jacobian, parametric_coords,
+    Intrepid2::CellTools<Kokkos::HostSpace>::setJacobian( d_jacobian, parametric_coords,
                                               this->d_cell_node_coords,
                                               d_parent_topology );
 
-    Intrepid::CellTools<Scalar>::getPhysicalSideNormals(
+    Intrepid2::CellTools<Kokkos::HostSpace>::getPhysicalSideNormals(
         side_normals, d_jacobian, d_side_id, d_parent_topology );
 }
 

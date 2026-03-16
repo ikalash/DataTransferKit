@@ -52,7 +52,8 @@
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
+#include <cstring>
 
 #include "DTK_IntrepidCellLocalMap.hpp"
 
@@ -187,9 +188,8 @@ TEUCHOS_UNIT_TEST( IntrepidCellLocalMap, element_single_cell_test )
         coords[2] = 1.5;
 
         // Create an element.
-        Intrepid::FieldContainer<double> element_coords(
-            coord_dims, element_coordinates( num_nodes * cell * dimension,
-                                             dimension * num_nodes ) );
+        Kokkos::DynRankView<double, Kokkos::HostSpace> element_coords( "element_coords", 1, num_nodes, dimension );
+        std::memcpy( element_coords.data(), &element_coordinates[num_nodes * cell * dimension], dimension * num_nodes * sizeof(double) );
 
         // Test the measure.
         double measure = DataTransferKit::IntrepidCellLocalMap::measure(

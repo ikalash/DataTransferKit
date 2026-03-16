@@ -69,7 +69,7 @@
 
 #include <Tpetra_MultiVector.hpp>
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 
@@ -175,7 +175,7 @@ int main( int argc, char *argv[] )
     std::vector<stk::mesh::Entity> src_part_nodes;
     stk::mesh::get_selected_entities( src_stk_selector, src_part_buckets,
                                       src_part_nodes );
-    Intrepid::FieldContainer<double> src_node_coords =
+    Kokkos::DynRankView<double, Kokkos::HostSpace> src_node_coords =
         DataTransferKit::STKMeshHelpers::getEntityNodeCoordinates(
             Teuchos::Array<stk::mesh::Entity>( src_part_nodes ),
             *src_bulk_data );
@@ -282,7 +282,7 @@ int main( int argc, char *argv[] )
     std::vector<stk::mesh::Entity> tgt_part_nodes;
     stk::mesh::get_selected_entities( tgt_stk_selector, tgt_part_buckets,
                                       tgt_part_nodes );
-    Intrepid::FieldContainer<double> tgt_node_coords =
+    Kokkos::DynRankView<double, Kokkos::HostSpace> tgt_node_coords =
         DataTransferKit::STKMeshHelpers::getEntityNodeCoordinates(
             Teuchos::Array<stk::mesh::Entity>( tgt_part_nodes ),
             *tgt_bulk_data );

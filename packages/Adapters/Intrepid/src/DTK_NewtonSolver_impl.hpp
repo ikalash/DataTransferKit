@@ -48,7 +48,7 @@
 
 #include <Teuchos_ScalarTraits.hpp>
 
-#include <Intrepid_RealSpaceTools.hpp>
+#include <Intrepid2_RealSpaceTools.hpp>
 
 namespace DataTransferKit
 {
@@ -65,21 +65,22 @@ void NewtonSolver<NonlinearProblem>::solve( MDArray &u,
     DTK_REQUIRE( 2 == u.rank() );
 
     // Allocate nonlinear residual, Jacobian, Newton update, and work arrays.
-    int d0 = u.dimension( 0 );
-    int d1 = u.dimension( 1 );
-    MDArray F( d0, d1 );
-    MDArray J( d0, d1, d1 );
-    MDArray J_inv( d0, d1, d1 );
-    MDArray update( d0, d1 );
-    MDArray u_old = u;
-    MDArray conv_check( d0 );
+    int d0 = u.extent_int( 0 );
+    int d1 = u.extent_int( 1 );
+    MDArray F( "F", d0, d1 );
+    MDArray J( "J", d0, d1, d1 );
+    MDArray J_inv( "J_inv", d0, d1, d1 );
+    MDArray update( "update", d0, d1 );
+    MDArray u_old( "u_old", d0, d1 );
+    Kokkos::deep_copy( u_old, u );
+    MDArray conv_check( "conv_check", d0 );
 
     // Compute the initial state.
     NPT::updateState( problem, u );
 
     // Computen the initial nonlinear residual and scale by -1 to get -F(u).
     NPT::evaluateResidual( problem, u, F );
-    Intrepid::RealSpaceTools<Scalar>::scale(
+    Intrepid2::RealSpaceTools<Kokkos::HostSpace>::scale(
         F, -Teuchos::ScalarTraits<Scalar>::one() );
 
     // Compute the initial Jacobian.
@@ -88,8 +89,8 @@ void NewtonSolver<NonlinearProblem>::solve( MDArray &u,
     // Check for degeneracy of the Jacobian. If it is degenerate then the
     // problem is ill conditioned and return very large numbers in the state
     // vector that correspond to no solution.
-    MDArray det( 1 );
-    Intrepid::RealSpaceTools<Scalar>::det( det, J );
+    MDArray det( "det", 1 );
+    Intrepid2::RealSpaceTools<Kokkos::HostSpace>::det( det, J );
     if ( std::abs( det( 0 ) ) < tolerance )
     {
         for ( int m = 0; m < d0; ++m )
@@ -106,23 +107,23 @@ void NewtonSolver<NonlinearProblem>::solve( MDArray &u,
     for ( int k = 0; k < max_iters; ++k )
     {
         // Solve the linear model, delta_u = J^-1 * -F(u).
-        Intrepid::RealSpaceTools<Scalar>::inverse( J_inv, J );
-        Intrepid::RealSpaceTools<Scalar>::matvec( update, J_inv, F );
+        Intrepid2::RealSpaceTools<Kokkos::HostSpace>::inverse( J_inv, J );
+        Intrepid2::RealSpaceTools<Kokkos::HostSpace>::matvec( update, J_inv, F );
 
         // Update the solution, u += delta_u.
-        Intrepid::RealSpaceTools<Scalar>::add( u, update );
+        Intrepid2::RealSpaceTools<Kokkos::HostSpace>::add( u, update );
 
         // Check for convergence.
-        Intrepid::RealSpaceTools<Scalar>::subtract( u_old, u );
-        Intrepid::RealSpaceTools<Scalar>::vectorNorm( conv_check, u_old,
-                                                      Intrepid::NORM_TWO );
+        Intrepid2::RealSpaceTools<Kokkos::HostSpace>::subtract( u_old, u );
+        Intrepid2::RealSpaceTools<Kokkos::HostSpace>::vectorNorm( conv_check, u_old,
+                                                      Intrepid2::NORM_TWO );
         if ( tolerance > conv_check( 0 ) )
         {
             break;
         }
 
         // Reset for the next iteration.
-        u_old = u;
+        Kokkos::deep_copy( u_old, u );
 
         // Update any state-dependent data from the last iteration using the
         // new solution vector.
@@ -130,7 +131,7 @@ void NewtonSolver<NonlinearProblem>::solve( MDArray &u,
 
         // Compute the nonlinear residual and scale by -1 to get -F(u).
         NPT::evaluateResidual( problem, u, F );
-        Intrepid::RealSpaceTools<Scalar>::scale(
+        Intrepid2::RealSpaceTools<Kokkos::HostSpace>::scale(
             F, -Teuchos::ScalarTraits<Scalar>::one() );
 
         // Compute the Jacobian.

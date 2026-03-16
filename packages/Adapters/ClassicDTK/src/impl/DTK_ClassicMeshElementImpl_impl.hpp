@@ -41,7 +41,7 @@
 #ifndef DTK_CLASSIC_MESHELEMENTENTITYIMPL_IMPL_HPP
 #define DTK_CLASSIC_MESHELEMENTENTITYIMPL_IMPL_HPP
 
-#include "Intrepid_FieldContainer.hpp"
+#include <Kokkos_DynRankView.hpp>
 
 namespace DataTransferKit
 {
@@ -127,10 +127,10 @@ template <class Mesh>
 void ClassicMeshElementImpl<Mesh>::boundingBox(
     Teuchos::Tuple<double, 6> &bounds ) const
 {
-    Intrepid::FieldContainer<double> coords =
+    Kokkos::DynRankView<double, Kokkos::HostSpace> coords =
         d_mesh->getElementNodeCoordinates( d_id, d_extra_data->d_block_id );
-    int num_nodes = coords.dimension( 1 );
-    int space_dim = coords.dimension( 2 );
+    int num_nodes = coords.extent_int( 1 );
+    int space_dim = coords.extent_int( 2 );
     double max = std::numeric_limits<double>::max();
     bounds = Teuchos::tuple( max, max, max, -max, -max, -max );
     for ( int n = 0; n < num_nodes; ++n )

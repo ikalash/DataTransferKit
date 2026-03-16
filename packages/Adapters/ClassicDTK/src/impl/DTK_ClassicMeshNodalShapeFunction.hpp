@@ -48,8 +48,8 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_RCP.hpp>
 
-#include <Intrepid_Basis.hpp>
-#include <Intrepid_FieldContainer.hpp>
+#include <Intrepid2_Basis.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 namespace DataTransferKit
 {
@@ -117,7 +117,7 @@ class ClassicMeshNodalShapeFunction : public EntityShapeFunction
 
   private:
     // Given an entity, get the intrepid basis function.
-    Teuchos::RCP<Intrepid::Basis<double, Intrepid::FieldContainer<double>>>
+    Teuchos::RCP<Intrepid2::Basis<Kokkos::HostSpace, double, double>>
     getIntrepidBasis( const Entity &entity ) const;
 
   private:

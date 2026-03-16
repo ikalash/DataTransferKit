@@ -50,7 +50,7 @@
 
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
 

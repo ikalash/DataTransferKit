@@ -45,8 +45,8 @@
 
 #include <Shards_CellTopology.hpp>
 
-#include <Intrepid_Cubature.hpp>
-#include <Intrepid_FieldContainer.hpp>
+#include <Intrepid2_Cubature.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 namespace DataTransferKit
 {
@@ -61,7 +61,7 @@ class IntrepidCell
   public:
     //! Typedefs.
     typedef double Scalar;
-    typedef Intrepid::FieldContainer<Scalar> MDArray;
+    typedef Kokkos::DynRankView<Scalar, Kokkos::HostSpace> MDArray;
     //@}
 
   public:
@@ -139,7 +139,7 @@ class IntrepidCell
     shards::CellTopology d_topology;
 
     // Cell integration rule.
-    Teuchos::RCP<Intrepid::Cubature<Scalar, MDArray>> d_cubature;
+    Teuchos::RCP<Intrepid2::Cubature<Kokkos::HostSpace, double, double>> d_cubature;
 
     // Cubature points (IP,Dim).
     MDArray d_cub_points;

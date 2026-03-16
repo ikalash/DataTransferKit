@@ -45,19 +45,19 @@
 
 #include <Shards_BasicTopologies.hpp>
 
-#include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
-#include "Intrepid_HGRAD_LINE_C1_FEM.hpp"
-#include "Intrepid_HGRAD_PYR_C1_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
-#include "Intrepid_HGRAD_TET_C1_FEM.hpp"
-#include "Intrepid_HGRAD_TET_C2_FEM.hpp"
-#include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
-#include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
-#include "Intrepid_HGRAD_WEDGE_C1_FEM.hpp"
-#include "Intrepid_HGRAD_WEDGE_C2_FEM.hpp"
-#include <Intrepid_Basis.hpp>
+#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_LINE_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_PYR_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_TET_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_WEDGE_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_WEDGE_C2_FEM.hpp"
+#include <Intrepid2_Basis.hpp>
 
 namespace DataTransferKit
 {
@@ -67,76 +67,64 @@ namespace DataTransferKit
  * \brief Factory for Intrepid basis functions.
  */
 //---------------------------------------------------------------------------//
-Teuchos::RCP<Intrepid::Basis<double, Intrepid::FieldContainer<double>>>
+Teuchos::RCP<Intrepid2::Basis<Kokkos::HostSpace, double, double>>
 IntrepidBasisFactory::create( const shards::CellTopology &cell_topo )
 {
 
-    Teuchos::RCP<Intrepid::Basis<double, Intrepid::FieldContainer<double>>>
+    Teuchos::RCP<Intrepid2::Basis<Kokkos::HostSpace, double, double>>
         basis;
 
     switch ( cell_topo.getKey() )
     {
 
     case shards::Line<2>::key:
-        basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_LINE_C1_FEM<
-                              double, Intrepid::FieldContainer<double>>() );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_LINE_C1_FEM<Kokkos::HostSpace, double, double>() );
         break;
 
     case shards::Triangle<3>::key:
-        basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TRI_C1_FEM<
-                              double, Intrepid::FieldContainer<double>>() );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TRI_C1_FEM<Kokkos::HostSpace, double, double>() );
         break;
 
     case shards::Triangle<6>::key:
-        basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TRI_C2_FEM<
-                              double, Intrepid::FieldContainer<double>>() );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<Kokkos::HostSpace, double, double>() );
         break;
 
     case shards::Quadrilateral<4>::key:
-        basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<
-                              double, Intrepid::FieldContainer<double>>() );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Kokkos::HostSpace, double, double>() );
         break;
 
     case shards::Quadrilateral<9>::key:
-        basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_QUAD_C2_FEM<
-                              double, Intrepid::FieldContainer<double>>() );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<Kokkos::HostSpace, double, double>() );
         break;
 
     case shards::Tetrahedron<4>::key:
-        basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TET_C1_FEM<
-                              double, Intrepid::FieldContainer<double>>() );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TET_C1_FEM<Kokkos::HostSpace, double, double>() );
         break;
 
     case shards::Tetrahedron<10>::key:
-        basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_TET_C2_FEM<
-                              double, Intrepid::FieldContainer<double>>() );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_TET_C2_FEM<Kokkos::HostSpace, double, double>() );
         break;
 
     case shards::Hexahedron<8>::key:
-        basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_HEX_C1_FEM<
-                              double, Intrepid::FieldContainer<double>>() );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<Kokkos::HostSpace, double, double>() );
         break;
 
     case shards::Hexahedron<27>::key:
-        basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_HEX_C2_FEM<
-                              double, Intrepid::FieldContainer<double>>() );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_C2_FEM<Kokkos::HostSpace, double, double>() );
         break;
 
     case shards::Wedge<6>::key:
-        basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_WEDGE_C1_FEM<
-                              double, Intrepid::FieldContainer<double>>() );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_WEDGE_C1_FEM<Kokkos::HostSpace, double, double>() );
         break;
 
     case shards::Wedge<18>::key:
-        basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_WEDGE_C2_FEM<
-                              double, Intrepid::FieldContainer<double>>() );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_WEDGE_C2_FEM<Kokkos::HostSpace, double, double>() );
         break;
 
     case shards::Pyramid<5>::key:
     case shards::Pyramid<13>::key:
     case shards::Pyramid<14>::key:
-        basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_PYR_C1_FEM<
-                              double, Intrepid::FieldContainer<double>>() );
+        basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_PYR_C1_FEM<Kokkos::HostSpace, double, double>() );
         break;
 
     default:

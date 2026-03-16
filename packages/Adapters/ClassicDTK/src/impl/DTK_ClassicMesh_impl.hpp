@@ -215,7 +215,7 @@ int ClassicMesh<Mesh>::elementLocalId( const GlobalOrdinal gid,
 // Given an element global id and its block id get the coordinates of the
 // element nodes.
 template <class Mesh>
-Intrepid::FieldContainer<double>
+Kokkos::DynRankView<double, Kokkos::HostSpace>
 ClassicMesh<Mesh>::getElementNodeCoordinates( const GlobalOrdinal gid,
                                               const int block_id ) const
 {
@@ -227,7 +227,7 @@ ClassicMesh<Mesh>::getElementNodeCoordinates( const GlobalOrdinal gid,
     // Allocate the coordinate container.
     int space_dim = dim();
     int num_node = d_permutation[block_id].size();
-    Intrepid::FieldContainer<double> coords( 1, num_node, space_dim );
+    Kokkos::DynRankView<double, Kokkos::HostSpace> coords( "coords", 1, num_node, space_dim );
 
     // Extract the coordinates.
     GlobalOrdinal element_size = d_element_gids[block_id].size();

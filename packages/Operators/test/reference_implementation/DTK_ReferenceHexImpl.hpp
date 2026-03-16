@@ -47,7 +47,7 @@
 
 #include <Teuchos_Array.hpp>
 
-#include <Intrepid_FieldContainer.hpp>
+#include <Kokkos_DynRankView.hpp>
 
 namespace DataTransferKit
 {
@@ -67,7 +67,7 @@ struct ReferenceHexExtraData : public DataTransferKit::EntityExtraData
     Teuchos::Array<DataTransferKit::EntityId> node_ids;
 
     // Node coordinates.
-    Intrepid::FieldContainer<double> node_coords;
+    Kokkos::DynRankView<double, Kokkos::HostSpace> node_coords;
 };
 
 //---------------------------------------------------------------------------//

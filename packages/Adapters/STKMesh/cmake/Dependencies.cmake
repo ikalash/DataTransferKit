@@ -6,7 +6,7 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
     Teuchos
     Tpetra
     Shards
-    Intrepid
+    Intrepid2
     STKUtil
     STKTopology
     STKMesh

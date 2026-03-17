@@ -160,8 +160,20 @@ void IntrepidCell::mapToCellReferenceFrame( const MDArray &physical_coords,
 {
     DTK_REQUIRE( 2 == physical_coords.rank() );
     DTK_REQUIRE( 2 == reference_coords.rank() );
+    // Intrepid2 CellTools::mapToReferenceFrame expects rank-3 (C,P,D) inputs.
+    // Wrap rank-2 (P,D) views with a leading cell dimension of 1.
+    int num_points = physical_coords.extent_int(0);
+    int space_dim = physical_coords.extent_int(1);
+    MDArray phys_rank3("phys_rank3", 1, num_points, space_dim);
+    MDArray ref_rank3("ref_rank3", 1, num_points, space_dim);
+    for (int p = 0; p < num_points; ++p)
+        for (int d = 0; d < space_dim; ++d)
+            phys_rank3(0, p, d) = physical_coords(p, d);
     Intrepid2::CellTools<Kokkos::HostSpace>::mapToReferenceFrame(
-        reference_coords, physical_coords, d_cell_node_coords, d_topology );
+        ref_rank3, phys_rank3, d_cell_node_coords, d_topology );
+    for (int p = 0; p < num_points; ++p)
+        for (int d = 0; d < space_dim; ++d)
+            reference_coords(p, d) = ref_rank3(0, p, d);
 }
 
 //---------------------------------------------------------------------------//
